@@ -1,8 +1,9 @@
 <h1 align="center">
   <img src=".github/image.png" alt="oppa" width="100px">
   <br>
+  OPPA
 </h1>
-<h4 align="center">A toolkit to generate an OpenAPI specification from JSON lines.</h4>
+<h4 align="center">A toolkit to generate OpenAPI specifications from JSON lines.</h4>
 
 Installation
 
