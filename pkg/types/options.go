@@ -7,6 +7,8 @@ import (
 )
 
 type Options struct {
+	// StoreFieldDir specifies custom directory to store openapi specifications
+	StoreOpenAPIDir string
 	// Silent shows only output
 	Silent bool
 	// Verbose specifies showing verbose output

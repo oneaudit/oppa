@@ -29,6 +29,7 @@ func readFlags() (*goflags.FlagSet, error) {
 	flagSet.SetDescription(`Oppa is a toolkit to generate OpenAPI specifications from JSON lines.`)
 
 	flagSet.CreateGroup("output", "Output",
+		flagSet.StringVarP(&options.StoreOpenAPIDir, "store-openapi-dir", "soad", "", "store per-host openapi to custom directory"),
 		flagSet.BoolVar(&options.Silent, "silent", false, "display output only"),
 		flagSet.BoolVarP(&options.Verbose, "verbose", "v", false, "display verbose output"),
 		flagSet.BoolVar(&options.Debug, "debug", false, "display debug output"),

@@ -4,13 +4,18 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/oneaudit/oppa/pkg/openapi"
 	"github.com/oneaudit/oppa/pkg/types"
 	"github.com/projectdiscovery/gologger"
 	"github.com/projectdiscovery/katana/pkg/output"
 	errorutil "github.com/projectdiscovery/utils/errors"
+	urlutil "github.com/projectdiscovery/utils/url"
 	"log"
 	"os"
+	"strings"
 )
+
+const DefaultOpenAPIDir = "oppa_openapi"
 
 func Execute(options *types.Options) error {
 	options.ConfigureOutput()
@@ -21,31 +26,34 @@ func Execute(options *types.Options) error {
 		return nil
 	}
 
+	var storeOpenAPIDir = DefaultOpenAPIDir
+	if options.StoreOpenAPIDir != DefaultOpenAPIDir && options.StoreOpenAPIDir != "" {
+		storeOpenAPIDir = options.StoreOpenAPIDir
+	}
+	_ = os.MkdirAll(storeOpenAPIDir, os.ModePerm)
+
 	if err := validateOptions(options); err != nil {
 		return errorutil.NewWithErr(err).Msgf("could not validate options")
 	}
 
-	// Open the file
-	file, err := os.Open(".data/output.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
+	return nil
+}
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		var result output.Result
-		err := json.Unmarshal([]byte(line), &result)
-		if err != nil {
-			log.Printf("Error unmarshaling line: %s\n", err)
-			continue
+func cleanDomainName(domain string) string {
+	// It may not be secure as URLParse
+	// is the only layer of security we use
+	var builder strings.Builder
+	for _, char := range domain {
+		switch char {
+		case '.':
+			builder.WriteRune('_')
+		case ':':
+			builder.WriteRune('_')
+		case '/':
+			builder.WriteRune('_')
+		default:
+			builder.WriteRune(char)
 		}
-
-		// Process the result (just printing here for demo)
-		fmt.Printf("Processed Result: %+v\n", result.Request.URL)
 	}
-
-	return scanner.Err()
+	return builder.String()
 }
