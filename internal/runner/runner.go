@@ -5,11 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/oneaudit/oppa/pkg/openapi"
 	"github.com/oneaudit/oppa/pkg/types"
 	"github.com/projectdiscovery/gologger"
 	"github.com/projectdiscovery/katana/pkg/output"
 	errorutil "github.com/projectdiscovery/utils/errors"
+	urlutil "github.com/projectdiscovery/utils/url"
+	"gopkg.in/yaml.v3"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -55,16 +59,55 @@ func Execute(options *types.Options) error {
 				return errorutil.NewWithErr(err).Msgf("could not unmarshal input file: %s", options.InputFile)
 			}
 
-			processResult(&result, options)
+			err = processResult(&result)
+			if err != nil {
+				return err
+			}
 		}
 	} else {
 		return errorutil.NewWithErr(fmt.Errorf("invalid input file format: %s", options.InputFile))
 	}
 
+	for filename, spec := range allSpecs {
+		targetFile := path.Join(options.StoreOpenAPIDir, filename)
+		file, err := os.Create(targetFile)
+		if err != nil {
+			return errorutil.NewWithErr(err).Msgf("could not create output file: %s", targetFile)
+		}
+		defer file.Close()
+
+		encoder := yaml.NewEncoder(file)
+		encoder.SetIndent(2)
+		err = encoder.Encode(&spec)
+		if err != nil {
+			return errorutil.NewWithErr(err).Msgf("could not write output file: %s", targetFile)
+		}
+	}
+
 	return nil
 }
 
-func processResult(result *output.Result, options *types.Options) {
+func processResult(result *output.Result) error {
+	URL := result.Request.URL
+	parsedURL, err := urlutil.Parse(URL)
+	if err != nil {
+		return err
+	}
+	domain := parsedURL.Host
+	filename := cleanDomainName(domain) + ".yaml"
+
+	if _, exists := allSpecs[filename]; !exists {
+		allSpecs[filename] = openapi.New(domain, parsedURL.Scheme)
+	}
+
+	allSpecs[filename].AddOperation(parsedURL.Path, result.Request.Method, &openapi3.Operation{
+		Responses: openapi3.NewResponses(),
+	})
+	allSpecs[filename].AddOperation(parsedURL.Path, result.Request.Method, &openapi3.Operation{
+		Responses: openapi3.NewResponses(),
+	})
+
+	return nil
 }
 
 func cleanDomainName(domain string) string {

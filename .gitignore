@@ -2,3 +2,4 @@ cmd/oppa/oppa
 oppa
 *.exe
 oppa_*/
+.output

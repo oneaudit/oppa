@@ -5,8 +5,8 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
-func New(baseEndpoint string, scheme string) openapi3.T {
-	return openapi3.T{
+func New(baseEndpoint string, scheme string) *openapi3.T {
+	return &openapi3.T{
 		OpenAPI: "3.0.0",
 		Info: &openapi3.Info{
 			Title:       baseEndpoint,
