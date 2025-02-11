@@ -98,6 +98,8 @@ func processResult(result *output.Result) error {
 	domain := parsedURL.Host
 	filename := cleanDomainName(domain) + ".yaml"
 
+	gologger.Info().Msgf("Processing URL: %s", URL)
+
 	if _, exists := allSpecs[filename]; !exists {
 		allSpecs[filename] = openapi.New(domain, parsedURL.Scheme)
 	}
