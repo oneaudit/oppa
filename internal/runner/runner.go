@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 )
 
@@ -194,10 +195,20 @@ func processResult(result *output.Result) error {
 		}
 	}
 
+	responses := &openapi3.Responses{}
+	if result.Response != nil && result.Response.StatusCode != 0 {
+		responses.Set(
+			strconv.Itoa(result.Response.StatusCode),
+			&openapi3.ResponseRef{Value: openapi3.NewResponse().WithDescription("No description")},
+		)
+	} else {
+		responses = openapi3.NewResponses()
+	}
+
 	allSpecs[filename].AddOperation(parsedURL.Path, result.Request.Method, &openapi3.Operation{
 		Parameters:  requestParameters,
 		RequestBody: responseBody,
-		Responses:   openapi3.NewResponses(),
+		Responses:   responses,
 	})
 
 	return nil
