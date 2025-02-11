@@ -12,6 +12,8 @@ import (
 	errorutil "github.com/projectdiscovery/utils/errors"
 	urlutil "github.com/projectdiscovery/utils/url"
 	"gopkg.in/yaml.v3"
+	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -120,9 +122,73 @@ func processResult(result *output.Result) error {
 		return true
 	})
 
+	var responseBody *openapi3.RequestBodyRef
+	hasResponseBody := false
+	switch result.Request.Method {
+	case http.MethodDelete:
+		hasResponseBody = true
+	case http.MethodPatch:
+		hasResponseBody = true
+	case http.MethodPost:
+		hasResponseBody = true
+	case http.MethodPut:
+		hasResponseBody = true
+	case http.MethodTrace:
+		hasResponseBody = true
+	}
+	if hasResponseBody {
+		contentType := result.Request.Headers["Content-Type"]
+		schema := openapi3.NewObjectSchema()
+		switch {
+		case strings.Contains(contentType, "application/json"):
+			var bodyParams map[string]interface{}
+			err = json.Unmarshal([]byte(result.Request.Body), &bodyParams)
+			if err != nil {
+				return err
+			}
+			for key, value := range bodyParams {
+				keySchema := openapi3.NewSchema()
+				keySchema.Type = &openapi3.Types{openapi.IdentifySchemaType(value)}
+				keySchema.Default = value
+				schema = schema.WithProperty(key, keySchema)
+			}
+		case strings.Contains(contentType, "application/x-www-form-urlencoded"):
+			bodyParams, err := url.ParseQuery(result.Request.Body)
+			if err != nil {
+				return err
+			}
+			for key, values := range bodyParams {
+				var value any
+				if len(values) == 0 {
+					value = ""
+				} else {
+					if len(values) == 1 {
+						value = values[0]
+					} else {
+						value = values
+					}
+				}
+
+				keySchema := openapi3.NewSchema()
+				keySchema.Type = &openapi3.Types{openapi.IdentifySchemaType(value)}
+				keySchema.Default = value
+				schema = schema.WithProperty(key, keySchema)
+			}
+		default:
+			return errorutil.NewWithErr(err)
+		}
+
+		if schema.Properties != nil {
+			responseBody = &openapi3.RequestBodyRef{Value: openapi3.NewRequestBody().WithContent(
+				openapi3.NewContentWithSchema(schema, []string{contentType}),
+			)}
+		}
+	}
+
 	allSpecs[filename].AddOperation(parsedURL.Path, result.Request.Method, &openapi3.Operation{
-		Parameters: requestParameters,
-		Responses:  openapi3.NewResponses(),
+		Parameters:  requestParameters,
+		RequestBody: responseBody,
+		Responses:   openapi3.NewResponses(),
 	})
 
 	return nil
