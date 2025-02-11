@@ -63,7 +63,7 @@ func Execute(options *types.Options) error {
 
 			err = processResult(&result)
 			if err != nil {
-				return err
+				return errorutil.NewWithErr(err).Msgf("could not process result: %s", options.InputFile)
 			}
 		}
 	} else {
@@ -72,6 +72,7 @@ func Execute(options *types.Options) error {
 
 	for filename, spec := range allSpecs {
 		targetFile := path.Join(options.StoreOpenAPIDir, filename)
+		gologger.Info().Msgf("Creating OpenAPI specification: %s", targetFile)
 		file, err := os.Create(targetFile)
 		if err != nil {
 			return errorutil.NewWithErr(err).Msgf("could not create output file: %s", targetFile)
@@ -91,14 +92,14 @@ func Execute(options *types.Options) error {
 
 func processResult(result *output.Result) error {
 	URL := result.Request.URL
+	gologger.Info().Msgf("Processing URL: %s", URL)
+
 	parsedURL, err := urlutil.Parse(URL)
 	if err != nil {
 		return err
 	}
 	domain := parsedURL.Host
 	filename := cleanDomainName(domain) + ".yaml"
-
-	gologger.Info().Msgf("Processing URL: %s", URL)
 
 	if _, exists := allSpecs[filename]; !exists {
 		allSpecs[filename] = openapi.New(domain, parsedURL.Scheme)
