@@ -51,12 +51,18 @@ func Execute(options *types.Options) error {
 
 	// Parse File
 	if options.InputFileMode == "jsonl" {
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			line := scanner.Text()
+		reader := bufio.NewReader(file)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				if err.Error() == "EOF" {
+					break
+				}
+				return errorutil.NewWithErr(err).Msgf("could not read input file")
+			}
 
 			var result output.Result
-			err := json.Unmarshal([]byte(line), &result)
+			err = json.Unmarshal([]byte(line), &result)
 			if err != nil {
 				return errorutil.NewWithErr(err).Msgf("could not unmarshal input file: %s", options.InputFile)
 			}

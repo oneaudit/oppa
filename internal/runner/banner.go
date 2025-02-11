@@ -14,7 +14,7 @@ var banner = (`
  ########  ###        ###       ###     ### 
 `)
 
-var version = "v1.0.2"
+var version = "v1.0.3"
 
 // showBanner is used to show the banner to the user
 func showBanner() {
