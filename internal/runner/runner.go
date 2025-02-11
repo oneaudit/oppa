@@ -1,16 +1,9 @@
 package runner
 
 import (
-	"bufio"
-	"encoding/json"
-	"fmt"
-	"github.com/oneaudit/oppa/pkg/openapi"
 	"github.com/oneaudit/oppa/pkg/types"
 	"github.com/projectdiscovery/gologger"
-	"github.com/projectdiscovery/katana/pkg/output"
 	errorutil "github.com/projectdiscovery/utils/errors"
-	urlutil "github.com/projectdiscovery/utils/url"
-	"log"
 	"os"
 	"strings"
 )
