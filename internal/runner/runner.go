@@ -100,11 +100,29 @@ func processResult(result *output.Result) error {
 		allSpecs[filename] = openapi.New(domain, parsedURL.Scheme)
 	}
 
-	allSpecs[filename].AddOperation(parsedURL.Path, result.Request.Method, &openapi3.Operation{
-		Responses: openapi3.NewResponses(),
+	// Handle query parameters
+	requestParameters := openapi3.Parameters{}
+	queryParams := parsedURL.Params
+	queryParams.Iterate(func(key string, value []string) bool {
+		var schema *openapi3.Schema
+		if len(value) == 0 {
+			schema = openapi3.NewStringSchema()
+		} else {
+			if len(value) > 1 {
+				gologger.Warning().Msgf("Multiple values found for key: %s", key)
+				return true
+			} else {
+				schema = openapi3.NewStringSchema().WithDefault(value[0])
+			}
+		}
+		requestParameters = append(requestParameters,
+			&openapi3.ParameterRef{Value: openapi3.NewQueryParameter(key).WithSchema(schema)})
+		return true
 	})
+
 	allSpecs[filename].AddOperation(parsedURL.Path, result.Request.Method, &openapi3.Operation{
-		Responses: openapi3.NewResponses(),
+		Parameters: requestParameters,
+		Responses:  openapi3.NewResponses(),
 	})
 
 	return nil
