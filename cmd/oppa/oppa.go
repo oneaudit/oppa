@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/oneaudit/oppa/internal/runner"
 	"github.com/oneaudit/oppa/pkg/types"
 	"github.com/projectdiscovery/goflags"
@@ -30,6 +31,11 @@ func main() {
 func readFlags() (*goflags.FlagSet, error) {
 	flagSet := goflags.NewFlagSet()
 	flagSet.SetDescription(`Oppa is a toolkit to generate OpenAPI specifications from JSON lines.`)
+
+	flagSet.CreateGroup("input", "Target",
+		flagSet.StringVarP(&options.InputFile, "target", "t", "", "target input file to parse"),
+		flagSet.StringVarP(&options.InputFileMode, "input-mode", "im", "jsonl", fmt.Sprintf("mode of input file (%v)", []string{"jsonl"})),
+	)
 
 	flagSet.CreateGroup("config", "Configuration",
 		flagSet.StringVar(&cfgFile, "config", "", "path to the katana-ng configuration file"),

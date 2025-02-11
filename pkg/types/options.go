@@ -7,7 +7,11 @@ import (
 )
 
 type Options struct {
-	// StoreFieldDir specifies custom directory to store openapi specifications
+	// InputFileMode input file
+	InputFile string
+	// InputFileMode specifies the mode of input file (jsonl, etc)
+	InputFileMode string
+	// StoreOpenAPIDir specifies custom directory to store openapi specifications
 	StoreOpenAPIDir string
 	// Silent shows only output
 	Silent bool
