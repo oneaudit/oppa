@@ -127,8 +127,10 @@ func processResult(result *output.Result) error {
 				schema = openapi3.NewStringSchema().WithDefault(value[0])
 			}
 		}
+		// All parameters are required unless we found a route without them
+		// (check that is handled when we add the operation)
 		requestParameters = append(requestParameters,
-			&openapi3.ParameterRef{Value: openapi3.NewQueryParameter(key).WithSchema(schema)})
+			&openapi3.ParameterRef{Value: openapi3.NewQueryParameter(key).WithRequired(true).WithSchema(schema)})
 		return true
 	})
 
@@ -214,13 +216,98 @@ func processResult(result *output.Result) error {
 		parsedURL.Path = "/"
 	}
 
-	allSpecs[filename].AddOperation(parsedURL.Path, result.Request.Method, &openapi3.Operation{
+	if allSpecs[filename].Paths == nil {
+		allSpecs[filename].Paths = openapi3.NewPaths()
+	}
+	pathItem := allSpecs[filename].Paths.Value(parsedURL.Path)
+	if pathItem == nil {
+		pathItem = &openapi3.PathItem{}
+		allSpecs[filename].Paths.Set(parsedURL.Path, pathItem)
+	}
+
+	// Add operation
+	pathItemSafeAddOperation(pathItem, result.Request.Method, &openapi3.Operation{
 		Parameters:  requestParameters,
 		RequestBody: responseBody,
 		Responses:   responses,
 	})
 
 	return nil
+}
+
+func operatingSafeAdd(operation **openapi3.Operation, src *openapi3.Operation) {
+	if *operation == nil {
+		*operation = src
+	} else {
+		dest := *operation
+		// Merge responses
+		for k, response := range src.Responses.Map() {
+			if k == "default" {
+				continue
+			}
+			status, _ := strconv.Atoi(k)
+			dest.AddResponse(status, response.Value)
+		}
+		// Merge parameters
+		// todo: add other parameter values as example
+		requestParameters := openapi3.Parameters{}
+		for _, srcParameter := range src.Parameters {
+			var required = srcParameter.Value.Required
+			var found = false
+			// Check if we know this parameter
+			// If we don't, it's not required since we did a request without
+			// If we do, then we use our value
+			for _, destParameter := range dest.Parameters {
+				if destParameter.Value.Name == srcParameter.Value.Name {
+					required = destParameter.Value.Required
+					found = true
+					break
+				}
+			}
+			if !found {
+				required = false
+			}
+			srcParameter.Value.Required = required
+			requestParameters = append(requestParameters, srcParameter)
+		}
+		for _, destParameter := range dest.Parameters {
+			var found = false
+			for _, newParameter := range requestParameters {
+				if newParameter.Value.Name == destParameter.Value.Name {
+					found = true
+					break
+				}
+			}
+			if !found {
+				requestParameters = append(requestParameters, destParameter)
+			}
+		}
+		dest.Parameters = requestParameters
+	}
+}
+func pathItemSafeAddOperation(pathItem *openapi3.PathItem, method string, operation *openapi3.Operation) {
+	switch method {
+	case http.MethodConnect:
+		operatingSafeAdd(&pathItem.Connect, operation)
+	case http.MethodDelete:
+		operatingSafeAdd(&pathItem.Delete, operation)
+	case http.MethodGet:
+		operatingSafeAdd(&pathItem.Get, operation)
+	case http.MethodHead:
+		operatingSafeAdd(&pathItem.Head, operation)
+	case http.MethodOptions:
+		operatingSafeAdd(&pathItem.Options, operation)
+	case http.MethodPatch:
+		operatingSafeAdd(&pathItem.Patch, operation)
+	case http.MethodPost:
+		operatingSafeAdd(&pathItem.Post, operation)
+	case http.MethodPut:
+		operatingSafeAdd(&pathItem.Put, operation)
+	case http.MethodTrace:
+		operatingSafeAdd(&pathItem.Trace, operation)
+	default:
+		panic(fmt.Errorf("unsupported HTTP method %q", method))
+	}
 }
 
 func cleanDomainName(domain string) string {
