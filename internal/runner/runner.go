@@ -134,6 +134,10 @@ func processResult(result *output.Result) error {
 
 	var responseBody *openapi3.RequestBodyRef
 	hasResponseBody := false
+
+	// Correct method to fix some edge cases
+	result.Request.Method = strings.ReplaceAll(strings.ReplaceAll(result.Request.Method, "\\", ""), "\"", "")
+
 	switch result.Request.Method {
 	case http.MethodDelete:
 		hasResponseBody = true
@@ -203,6 +207,11 @@ func processResult(result *output.Result) error {
 		)
 	} else {
 		responses = openapi3.NewResponses()
+	}
+
+	// Correct path to fix some edge cases
+	if parsedURL.Path == "" {
+		parsedURL.Path = "/"
 	}
 
 	allSpecs[filename].AddOperation(parsedURL.Path, result.Request.Method, &openapi3.Operation{
