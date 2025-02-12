@@ -61,6 +61,9 @@ func Execute(options *types.Options) error {
 				}
 				return errorutil.NewWithErr(err).Msgf("could not read input file")
 			}
+			if line == "\n" {
+				break
+			}
 
 			var result output.Result
 			err = json.Unmarshal([]byte(line), &result)
@@ -70,7 +73,7 @@ func Execute(options *types.Options) error {
 
 			err = processResult(&result)
 			if err != nil {
-				return errorutil.NewWithErr(err).Msgf("could not process result: %s", options.InputFile)
+				return errorutil.NewWithErr(err).Msgf("could not process result: %s", result.Request.URL)
 			}
 		}
 	} else {
@@ -158,6 +161,10 @@ func processResult(result *output.Result) error {
 		switch {
 		case strings.Contains(contentType, "application/json"):
 			var bodyParams map[string]interface{}
+			if result.Request.Body == "" {
+				gologger.Error().Msgf("%s body is missing or empty for %s", result.Request.Method, result.Request.URL)
+				result.Request.Body = "{\"missing request body\":\"katana\"}"
+			}
 			err = json.Unmarshal([]byte(result.Request.Body), &bodyParams)
 			if err != nil {
 				return err
