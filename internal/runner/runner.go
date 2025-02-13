@@ -7,6 +7,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/oneaudit/oppa/pkg/openapi"
 	"github.com/oneaudit/oppa/pkg/types"
+	"github.com/oneaudit/oppa/pkg/utils/arrays"
 	"github.com/projectdiscovery/gologger"
 	"github.com/projectdiscovery/katana/pkg/output"
 	errorutil "github.com/projectdiscovery/utils/errors"
@@ -48,6 +49,7 @@ func Execute(options *types.Options) error {
 	if err != nil {
 		return errorutil.NewWithErr(err).Msgf("could not open input file: %s", options.InputFile)
 	}
+	//goland:noinspection GoUnhandledErrorResult
 	defer file.Close()
 
 	// Parse File
@@ -87,6 +89,7 @@ func Execute(options *types.Options) error {
 		if err != nil {
 			return errorutil.NewWithErr(err).Msgf("could not create output file: %s", targetFile)
 		}
+		//goland:noinspection GoDeferInLoop,GoUnhandledErrorResult
 		defer file.Close()
 
 		encoder := yaml.NewEncoder(file)
@@ -136,6 +139,21 @@ func processResult(result *output.Result) error {
 			&openapi3.ParameterRef{Value: openapi3.NewQueryParameter(key).WithRequired(true).WithSchema(schema)})
 		return true
 	})
+
+	// Handle headers
+	if result.Request.Headers != nil {
+		for headerName, headerValue := range result.Request.Headers {
+			// not interesting
+			if strings.ToLower(headerName) == "content-type" {
+				continue
+			}
+
+			requestParameters = append(requestParameters,
+				&openapi3.ParameterRef{Value: openapi3.NewHeaderParameter(headerName).WithRequired(true).WithSchema(
+					openapi3.NewStringSchema().WithDefault(headerValue),
+				)})
+		}
+	}
 
 	var responseBody *openapi3.RequestBodyRef
 	hasResponseBody := false
@@ -255,41 +273,8 @@ func operatingSafeAdd(operation **openapi3.Operation, src *openapi3.Operation) {
 			status, _ := strconv.Atoi(k)
 			dest.AddResponse(status, response.Value)
 		}
-		// Merge parameters
-		// todo: add other parameter values as example
-		requestParameters := openapi3.Parameters{}
-		for _, srcParameter := range src.Parameters {
-			var required = srcParameter.Value.Required
-			var found = false
-			// Check if we know this parameter
-			// If we don't, it's not required since we did a request without
-			// If we do, then we use our value
-			for _, destParameter := range dest.Parameters {
-				if destParameter.Value.Name == srcParameter.Value.Name {
-					required = destParameter.Value.Required
-					found = true
-					break
-				}
-			}
-			if !found {
-				required = false
-			}
-			srcParameter.Value.Required = required
-			requestParameters = append(requestParameters, srcParameter)
-		}
-		for _, destParameter := range dest.Parameters {
-			var found = false
-			for _, newParameter := range requestParameters {
-				if newParameter.Value.Name == destParameter.Value.Name {
-					found = true
-					break
-				}
-			}
-			if !found {
-				requestParameters = append(requestParameters, destParameter)
-			}
-		}
-		dest.Parameters = requestParameters
+
+		dest.Parameters = arrays.MergeParameters(src.Parameters, dest.Parameters)
 	}
 }
 func pathItemSafeAddOperation(pathItem *openapi3.PathItem, method string, operation *openapi3.Operation) {
