@@ -33,7 +33,7 @@ TARGET:
    -im, -input-mode string  mode of input file ([jsonl]) (default "jsonl")
 
 CONFIGURATION:
-   -config string  path to the katana-ng configuration file
+   -config string  path to the oppa configuration file
 
 OUTPUT:
    -d, -dir string                   store openapi to custom directory

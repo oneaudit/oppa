@@ -38,7 +38,7 @@ func readFlags() (*goflags.FlagSet, error) {
 	)
 
 	flagSet.CreateGroup("config", "Configuration",
-		flagSet.StringVar(&cfgFile, "config", "", "path to the katana-ng configuration file"),
+		flagSet.StringVar(&cfgFile, "config", "", "path to the oppa configuration file"),
 	)
 
 	flagSet.CreateGroup("output", "Output",
