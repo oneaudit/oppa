@@ -83,7 +83,7 @@ func Execute(options *types.Options) error {
 	}
 
 	for filename, spec := range allSpecs {
-		targetFile := path.Join(options.StoreOpenAPIDir, filename)
+		targetFile := path.Join(storeOpenAPIDir, filename)
 		gologger.Info().Msgf("Creating OpenAPI specification: %s", targetFile)
 		file, err := os.Create(targetFile)
 		if err != nil {

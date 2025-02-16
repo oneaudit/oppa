@@ -36,7 +36,7 @@ CONFIGURATION:
    -config string  path to the oppa configuration file
 
 OUTPUT:
-   -d, -dir string                   store openapi to custom directory
+   -d, -output-dir string            store openapi to custom directory
    -silent                           display output only
    -v, -verbose                      display verbose output
    -debug                            display debug output
