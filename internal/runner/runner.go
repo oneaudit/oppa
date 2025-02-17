@@ -2,6 +2,8 @@ package runner
 
 import (
 	"bufio"
+	"encoding/base64"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -9,10 +11,12 @@ import (
 	"github.com/oneaudit/oppa/pkg/types"
 	"github.com/oneaudit/oppa/pkg/utils/arrays"
 	"github.com/projectdiscovery/gologger"
+	"github.com/projectdiscovery/katana/pkg/navigation"
 	"github.com/projectdiscovery/katana/pkg/output"
 	errorutil "github.com/projectdiscovery/utils/errors"
 	urlutil "github.com/projectdiscovery/utils/url"
 	"gopkg.in/yaml.v3"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -78,8 +82,95 @@ func Execute(options *types.Options) error {
 				return errorutil.NewWithErr(err).Msgf("could not process result: %s", result.Request.URL)
 			}
 		}
+	} else if options.InputFileMode == "logger++" {
+		reader := csv.NewReader(file)
+		rows, err := reader.ReadAll()
+		if err != nil {
+			return errorutil.NewWithErr(err).Msgf("could not read input file")
+		}
+
+		for _, row := range rows {
+			if row[3] == "Method" {
+				continue
+			}
+
+			requestMethod := row[3]
+			requestURL := row[7]
+			responseStatusCode, _ := strconv.Atoi(row[12])
+
+			var result output.Result
+			result.Request = &navigation.Request{
+				Method:  requestMethod,
+				URL:     requestURL,
+				Body:    "",
+				Headers: map[string]string{},
+			}
+			result.Response = &navigation.Response{
+				StatusCode: responseStatusCode,
+			}
+
+			decodedBytes, err := base64.StdEncoding.DecodeString(row[22])
+			if err != nil {
+				return errorutil.NewWithErr(err).Msgf("could not decode request: %s", row[0])
+			}
+			requestReader := bufio.NewReader(strings.NewReader(strings.Replace(string(decodedBytes), " HTTP/2", " HTTP/1.1", 1)))
+			request, err := http.ReadRequest(requestReader)
+			if err != nil {
+				return errorutil.NewWithErr(err).Msgf("could not parse request: %s", row[0])
+			}
+			for headerName, headerValue := range request.Header {
+				switch strings.ToLower(headerName) {
+				case "accept-encoding":
+					continue
+				case "accept":
+					continue
+				case "user-agent":
+					continue
+				case "accept-language":
+					continue
+				case "connection":
+					continue
+				case "sec-gpc":
+					continue
+				case "sec-fetch-site":
+					continue
+				case "sec-fetch-user":
+					continue
+				case "sec-fetch-mode":
+					continue
+				case "sec-fetch-dest":
+					continue
+				case "priority":
+					continue
+				case "referer":
+					continue
+				case "name":
+					continue
+				case "dnt":
+					continue
+				case "cookie":
+					continue
+				case "upgrade-insecure-requests":
+					continue
+				case "content-length":
+					continue
+				case "origin":
+					continue
+				}
+				result.Request.Headers[headerName] = strings.Join(headerValue, ";")
+			}
+			if request.Body != nil {
+				body, _ := io.ReadAll(request.Body)
+				result.Request.Body = string(body)
+			}
+
+			err = processResult(&result)
+			if err != nil {
+				return errorutil.NewWithErr(err).Msgf("could not process result: %s", result.Request.URL)
+			}
+		}
 	} else {
-		return errorutil.NewWithErr(fmt.Errorf("invalid input file format: %s", options.InputFile))
+		return errorutil.NewWithErr(fmt.Errorf("invalid input file format: %s", options.InputFileMode))
 	}
 
 	for filename, spec := range allSpecs {

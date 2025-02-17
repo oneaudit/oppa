@@ -34,7 +34,7 @@ func readFlags() (*goflags.FlagSet, error) {
 
 	flagSet.CreateGroup("input", "Target",
 		flagSet.StringVarP(&options.InputFile, "target", "t", "", "target input file to parse"),
-		flagSet.StringVarP(&options.InputFileMode, "input-mode", "im", "jsonl", fmt.Sprintf("mode of input file (%v)", []string{"jsonl"})),
+		flagSet.StringVarP(&options.InputFileMode, "input-mode", "im", "jsonl", fmt.Sprintf("mode of input file (%v)", []string{"jsonl", "logger++"})),
 	)
 
 	flagSet.CreateGroup("config", "Configuration",
