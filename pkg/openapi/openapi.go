@@ -6,6 +6,22 @@ import (
 	"reflect"
 )
 
+var httpUninterestingHeaders = []string{
+	"accept-encoding", "accept", "user-agent", "accept-language", "connection", "sec-gpc", "sec-fetch-site",
+	"sec-fetch-user", "sec-fetch-mode", "sec-fetch-dest", "priority", "referer", "name", "dnt", "cookie",
+	"upgrade-insecure-requests", "content-length", "origin", "sec-ch-ua-platform", "sec-ch-ua", "sec-ch-ua-mobile",
+	"cache-control", "x-requested-with", "if-modified-since", "if-none-match", "authorization", "pragma",
+}
+
+func IsUninterestingHeader(header string) bool {
+	for _, h := range httpUninterestingHeaders {
+		if h == header {
+			return true
+		}
+	}
+	return false
+}
+
 func New(baseEndpoint string, scheme string) *openapi3.T {
 	return &openapi3.T{
 		OpenAPI: "3.0.0",

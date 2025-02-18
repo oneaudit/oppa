@@ -4,7 +4,7 @@ import (
 	"github.com/projectdiscovery/gologger"
 )
 
-var banner = (`
+var banner = `
  ::::::::  :::::::::  :::::::::     :::     
 :+:    :+: :+:    :+: :+:    :+:  :+: :+:   
 +:+    +:+ +:+    +:+ +:+    +:+ +:+   +:+  
@@ -12,9 +12,9 @@ var banner = (`
 +#+    +#+ +#+        +#+       +#+     +#+ 
 #+#    #+# #+#        #+#       #+#     #+# 
  ########  ###        ###       ###     ### 
-`)
+`
 
-var version = "v1.0.4"
+var version = "v1.0.5"
 
 // showBanner is used to show the banner to the user
 func showBanner() {

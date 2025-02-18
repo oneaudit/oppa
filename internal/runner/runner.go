@@ -119,42 +119,7 @@ func Execute(options *types.Options) error {
 				return errorutil.NewWithErr(err).Msgf("could not parse request: %s", row[0])
 			}
 			for headerName, headerValue := range request.Header {
-				switch strings.ToLower(headerName) {
-				case "accept-encoding":
-					continue
-				case "accept":
-					continue
-				case "user-agent":
-					continue
-				case "accept-language":
-					continue
-				case "connection":
-					continue
-				case "sec-gpc":
-					continue
-				case "sec-fetch-site":
-					continue
-				case "sec-fetch-user":
-					continue
-				case "sec-fetch-mode":
-					continue
-				case "sec-fetch-dest":
-					continue
-				case "priority":
-					continue
-				case "referer":
-					continue
-				case "name":
-					continue
-				case "dnt":
-					continue
-				case "cookie":
-					continue
-				case "upgrade-insecure-requests":
-					continue
-				case "content-length":
-					continue
-				case "origin":
+				if openapi.IsUninterestingHeader(strings.ToLower(headerName)) {
 					continue
 				}
 				result.Request.Headers[headerName] = strings.Join(headerValue, ";")
