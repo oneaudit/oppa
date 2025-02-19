@@ -197,18 +197,23 @@ func processResult(result *output.Result) error {
 	})
 
 	// Handle headers
-	if result.Request.Headers != nil {
-		for headerName, headerValue := range result.Request.Headers {
-			// not interesting
-			if strings.ToLower(headerName) == "content-type" {
-				continue
-			}
+	if result.Request.Headers == nil {
+		result.Request.Headers = map[string]string{}
+	}
+	if _, found := result.Request.Headers["Origin"]; !found {
+		result.Request.Headers["Origin"] = fmt.Sprintf("%s://%s", parsedURL.Scheme, parsedURL.Host)
+	}
 
-			requestParameters = append(requestParameters,
-				&openapi3.ParameterRef{Value: openapi3.NewHeaderParameter(headerName).WithRequired(true).WithSchema(
-					openapi3.NewStringSchema().WithDefault(headerValue),
-				)})
+	for headerName, headerValue := range result.Request.Headers {
+		// not interesting
+		if strings.ToLower(headerName) == "content-type" {
+			continue
 		}
+
+		requestParameters = append(requestParameters,
+			&openapi3.ParameterRef{Value: openapi3.NewHeaderParameter(headerName).WithRequired(true).WithSchema(
+				openapi3.NewStringSchema().WithDefault(headerValue),
+			)})
 	}
 
 	var responseBody *openapi3.RequestBodyRef

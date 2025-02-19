@@ -6,10 +6,11 @@ import (
 	"reflect"
 )
 
+// We are allowing "origin" while we hope the value is appropriate (not a fuzzed one)
 var httpUninterestingHeaders = []string{
 	"accept-encoding", "accept", "user-agent", "accept-language", "connection", "sec-gpc", "sec-fetch-site",
 	"sec-fetch-user", "sec-fetch-mode", "sec-fetch-dest", "priority", "referer", "name", "dnt", "cookie",
-	"upgrade-insecure-requests", "content-length", "origin", "sec-ch-ua-platform", "sec-ch-ua", "sec-ch-ua-mobile",
+	"upgrade-insecure-requests", "content-length", "sec-ch-ua-platform", "sec-ch-ua", "sec-ch-ua-mobile",
 	"cache-control", "x-requested-with", "if-modified-since", "if-none-match", "authorization", "pragma",
 }
 
