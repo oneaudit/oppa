@@ -209,9 +209,15 @@ func processResult(result *output.Result) error {
 		if strings.ToLower(headerName) == "content-type" {
 			continue
 		}
+		required := true
+
+		// not required
+		if strings.ToLower(headerName) == "origin" {
+			required = false
+		}
 
 		requestParameters = append(requestParameters,
-			&openapi3.ParameterRef{Value: openapi3.NewHeaderParameter(headerName).WithRequired(true).WithSchema(
+			&openapi3.ParameterRef{Value: openapi3.NewHeaderParameter(headerName).WithRequired(required).WithSchema(
 				openapi3.NewStringSchema().WithDefault(headerValue),
 			)})
 	}
