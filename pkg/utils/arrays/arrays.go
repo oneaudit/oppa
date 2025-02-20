@@ -30,3 +30,23 @@ func MergeParameters(src openapi3.Parameters, dest openapi3.Parameters) (paramet
 	}
 	return
 }
+
+func MergeResponses(src *openapi3.Responses, dest *openapi3.Responses) *openapi3.Responses {
+	result := make(map[string]*openapi3.ResponseRef)
+	for k, v := range src.Map() {
+		result[k] = v
+	}
+	for k, v := range dest.Map() {
+		result[k] = v
+	}
+
+	responses := &openapi3.Responses{}
+	skipDefault := len(result) > 1
+	for responseCode, responseValue := range result {
+		if skipDefault && responseCode == "default" {
+			continue
+		}
+		responses.Set(responseCode, responseValue)
+	}
+	return responses
+}

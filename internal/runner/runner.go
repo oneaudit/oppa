@@ -120,6 +120,12 @@ func Execute(options *types.Options) error {
 			result.Request.Headers = parsedRawHttp.Headers
 			result.Request.Body = parsedRawHttp.Body
 
+			decodedBytes, err = base64.StdEncoding.DecodeString(row[23])
+			if err != nil {
+				return errorutil.NewWithErr(err).Msgf("could not decode response: %s", row[0])
+			}
+			result.Response.Raw = string(decodedBytes)
+
 			err = processResult(options, &result)
 			if err != nil {
 				return errorutil.NewWithErr(err).Msgf("could not process result: %s", result.Request.URL)
@@ -286,15 +292,30 @@ func processResult(options *types.Options, result *output.Result) error {
 		}
 	}
 
-	responses := &openapi3.Responses{}
+	responses := openapi3.NewResponses()
 	extensions := make(map[string]any)
-	if result.Response != nil && result.Response.StatusCode != 0 {
-		responses.Set(
-			strconv.Itoa(result.Response.StatusCode),
-			&openapi3.ResponseRef{Value: openapi3.NewResponse().WithDescription("No description")},
-		)
-	} else {
-		responses = openapi3.NewResponses()
+	if result.Response != nil {
+		if result.Response.StatusCode != 0 {
+			responses.Set(
+				strconv.Itoa(result.Response.StatusCode),
+				&openapi3.ResponseRef{Value: openapi3.NewResponse().WithDescription("No description")},
+			)
+		}
+
+		if result.Response.Raw != "" {
+			parsedResponse, err := urlhelper.ParseRawHTTP(result.Response.Raw, false)
+			if err != nil {
+				return errorutil.NewWithErr(err)
+			}
+			// set status code
+			responses.Set(
+				strconv.Itoa(parsedResponse.StatusCode),
+				&openapi3.ResponseRef{Value: openapi3.NewResponse().WithDescription("No description")},
+			)
+			// set extensions
+			if parsedResponse.Headers != nil && strings.HasPrefix(parsedResponse.Headers["Content-Type"], "text/html") {
+			}
+		}
 	}
 
 	// Correct path to fix some edge cases
@@ -324,18 +345,11 @@ func processResult(options *types.Options, result *output.Result) error {
 
 func operatingSafeAdd(operation **openapi3.Operation, src *openapi3.Operation) {
 	if *operation == nil {
+		src.Responses = arrays.MergeResponses(src.Responses, src.Responses)
 		*operation = src
 	} else {
 		dest := *operation
-		// Merge responses
-		for k, response := range src.Responses.Map() {
-			if k == "default" {
-				continue
-			}
-			status, _ := strconv.Atoi(k)
-			dest.AddResponse(status, response.Value)
-		}
-
+		dest.Responses = arrays.MergeResponses(src.Responses, dest.Responses)
 		dest.Parameters = arrays.MergeParameters(src.Parameters, dest.Parameters)
 	}
 }

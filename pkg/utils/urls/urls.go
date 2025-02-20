@@ -11,10 +11,11 @@ import (
 )
 
 type ParseHTTP struct {
-	Method  string            `json:"method,omitempty"`
-	URL     string            `json:"endpoint,omitempty"`
-	Body    string            `json:"body,omitempty"`
-	Headers map[string]string `json:"headers,omitempty"`
+	Method     string            `json:"method,omitempty"`
+	StatusCode int               `json:"status,omitempty"`
+	URL        string            `json:"endpoint,omitempty"`
+	Body       string            `json:"body,omitempty"`
+	Headers    map[string]string `json:"headers,omitempty"`
 }
 
 func ParseRawHTTP(raw string, isRequest bool) (*ParseHTTP, error) {
@@ -44,6 +45,7 @@ func ParseRawHTTP(raw string, isRequest bool) (*ParseHTTP, error) {
 		}
 		result.Method = request.Method
 		result.URL = request.URL.String()
+		result.StatusCode = 0
 		headers = request.Header
 		bodyStream = request.Body
 	} else {
@@ -53,6 +55,7 @@ func ParseRawHTTP(raw string, isRequest bool) (*ParseHTTP, error) {
 		}
 		result.Method = ""
 		result.URL = ""
+		result.StatusCode = response.StatusCode
 		headers = response.Header
 		bodyStream = response.Body
 	}
