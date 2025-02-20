@@ -6,6 +6,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/oneaudit/oppa/pkg/openapi"
 	"github.com/oneaudit/oppa/pkg/types"
@@ -314,6 +315,18 @@ func processResult(options *types.Options, result *output.Result) error {
 			)
 			// set extensions
 			if parsedResponse.Headers != nil && strings.HasPrefix(parsedResponse.Headers["Content-Type"], "text/html") {
+				reader, err := goquery.NewDocumentFromReader(strings.NewReader(parsedResponse.Body))
+				if err != nil {
+					return errorutil.NewWithErr(err)
+				}
+				var scriptSrcendpoints []string
+				reader.Find("script[src]").Each(func(i int, item *goquery.Selection) {
+					src, ok := item.Attr("src")
+					if ok && src != "" && strings.HasPrefix(src, "http") {
+						scriptSrcendpoints = append(scriptSrcendpoints, src)
+					}
+				})
+				extensions["x-javascript-libs"] = scriptSrcendpoints
 			}
 		}
 	}
