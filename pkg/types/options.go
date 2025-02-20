@@ -11,6 +11,8 @@ type Options struct {
 	InputFile string
 	// InputFileMode specifies the mode of input file (jsonl, etc)
 	InputFileMode string
+	// NoOrigin defines if we are adding Origin: to all requests
+	NoOrigin bool
 	// StoreOpenAPIDir specifies custom directory to store openapi specifications
 	StoreOpenAPIDir string
 	// Silent shows only output

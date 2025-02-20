@@ -77,7 +77,7 @@ func Execute(options *types.Options) error {
 				return errorutil.NewWithErr(err).Msgf("could not unmarshal input file: %s", options.InputFile)
 			}
 
-			err = processResult(&result)
+			err = processResult(options, &result)
 			if err != nil {
 				return errorutil.NewWithErr(err).Msgf("could not process result: %s", result.Request.URL)
 			}
@@ -120,7 +120,7 @@ func Execute(options *types.Options) error {
 			result.Request.Headers = parsedRawHttp.Headers
 			result.Request.Body = parsedRawHttp.Body
 
-			err = processResult(&result)
+			err = processResult(options, &result)
 			if err != nil {
 				return errorutil.NewWithErr(err).Msgf("could not process result: %s", result.Request.URL)
 			}
@@ -150,7 +150,7 @@ func Execute(options *types.Options) error {
 	return nil
 }
 
-func processResult(result *output.Result) error {
+func processResult(options *types.Options, result *output.Result) error {
 	URL := result.Request.URL
 	gologger.Info().Msgf("Processing URL: %s", URL)
 
@@ -191,8 +191,10 @@ func processResult(result *output.Result) error {
 	if result.Request.Headers == nil {
 		result.Request.Headers = map[string]string{}
 	}
-	if _, found := result.Request.Headers["Origin"]; !found {
-		result.Request.Headers["Origin"] = fmt.Sprintf("%s://%s", parsedURL.Scheme, parsedURL.Host)
+	if options.NoOrigin {
+		if _, found := result.Request.Headers["Origin"]; !found {
+			result.Request.Headers["Origin"] = fmt.Sprintf("%s://%s", parsedURL.Scheme, parsedURL.Host)
+		}
 	}
 
 	for headerName, headerValue := range result.Request.Headers {

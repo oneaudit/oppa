@@ -41,6 +41,10 @@ func readFlags() (*goflags.FlagSet, error) {
 		flagSet.StringVar(&cfgFile, "config", "", "path to the oppa configuration file"),
 	)
 
+	flagSet.CreateGroup("tuning", "Tuning",
+		flagSet.BoolVarP(&options.NoOrigin, "no-origin", "no", false, "By default, oppa adds an Origin header to all paths."),
+	)
+
 	flagSet.CreateGroup("output", "Output",
 		flagSet.StringVarP(&options.StoreOpenAPIDir, "output-dir", "d", "", "store openapi to custom directory"),
 		flagSet.BoolVar(&options.Silent, "silent", false, "display output only"),
