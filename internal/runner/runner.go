@@ -10,13 +10,13 @@ import (
 	"github.com/oneaudit/oppa/pkg/openapi"
 	"github.com/oneaudit/oppa/pkg/types"
 	"github.com/oneaudit/oppa/pkg/utils/arrays"
+	urlhelper "github.com/oneaudit/oppa/pkg/utils/urls"
 	"github.com/projectdiscovery/gologger"
 	"github.com/projectdiscovery/katana/pkg/navigation"
 	"github.com/projectdiscovery/katana/pkg/output"
 	errorutil "github.com/projectdiscovery/utils/errors"
 	urlutil "github.com/projectdiscovery/utils/url"
 	"gopkg.in/yaml.v3"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -100,10 +100,8 @@ func Execute(options *types.Options) error {
 
 			var result output.Result
 			result.Request = &navigation.Request{
-				Method:  requestMethod,
-				URL:     requestURL,
-				Body:    "",
-				Headers: map[string]string{},
+				Method: requestMethod,
+				URL:    requestURL,
 			}
 			result.Response = &navigation.Response{
 				StatusCode: responseStatusCode,
@@ -113,21 +111,14 @@ func Execute(options *types.Options) error {
 			if err != nil {
 				return errorutil.NewWithErr(err).Msgf("could not decode request: %s", row[0])
 			}
-			requestReader := bufio.NewReader(strings.NewReader(strings.Replace(string(decodedBytes), " HTTP/2", " HTTP/1.1", 1)))
-			request, err := http.ReadRequest(requestReader)
+			parsedRawHttp, err := urlhelper.ParseRawHTTP(string(decodedBytes), true)
 			if err != nil {
 				return errorutil.NewWithErr(err).Msgf("could not parse request: %s", row[0])
 			}
-			for headerName, headerValue := range request.Header {
-				if openapi.IsUninterestingHeader(strings.ToLower(headerName)) {
-					continue
-				}
-				result.Request.Headers[headerName] = strings.Join(headerValue, ";")
-			}
-			if request.Body != nil {
-				body, _ := io.ReadAll(request.Body)
-				result.Request.Body = string(body)
-			}
+
+			// Add missing fields
+			result.Request.Headers = parsedRawHttp.Headers
+			result.Request.Body = parsedRawHttp.Body
 
 			err = processResult(&result)
 			if err != nil {
@@ -294,6 +285,7 @@ func processResult(result *output.Result) error {
 	}
 
 	responses := &openapi3.Responses{}
+	extensions := make(map[string]any)
 	if result.Response != nil && result.Response.StatusCode != 0 {
 		responses.Set(
 			strconv.Itoa(result.Response.StatusCode),
@@ -322,6 +314,7 @@ func processResult(result *output.Result) error {
 		Parameters:  requestParameters,
 		RequestBody: responseBody,
 		Responses:   responses,
+		Extensions:  extensions,
 	})
 
 	return nil
