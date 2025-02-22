@@ -2,6 +2,7 @@ package arrays
 
 import (
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/projectdiscovery/gologger"
 )
 
 func MergeParameters(src openapi3.Parameters, dest openapi3.Parameters) (parameters openapi3.Parameters) {
@@ -49,4 +50,34 @@ func MergeResponses(src *openapi3.Responses, dest *openapi3.Responses) *openapi3
 		responses.Set(responseCode, responseValue)
 	}
 	return responses
+}
+
+func MergeExtensions(src map[string]any, dest map[string]any) map[string]any {
+	result := make(map[string]any)
+	javascriptLibs := make(map[string]string)
+
+	for k, v := range src {
+		if k == "x-javascript-libs" {
+			for _, lib := range v.([]string) {
+				javascriptLibs[lib] = ""
+			}
+		} else {
+			gologger.Warning().Msgf("Unexpected extension key: %s", k)
+		}
+	}
+	for k, v := range dest {
+		if k == "x-javascript-libs" {
+			for _, lib := range v.([]string) {
+				javascriptLibs[lib] = ""
+			}
+		} else {
+			gologger.Warning().Msgf("Unexpected extension key: %s", k)
+		}
+	}
+
+	result["x-javascript-libs"] = []string{}
+	for key := range javascriptLibs {
+		result["x-javascript-libs"] = append(result["x-javascript-libs"].([]string), key)
+	}
+	return result
 }

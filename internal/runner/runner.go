@@ -198,7 +198,7 @@ func processResult(options *types.Options, result *output.Result) error {
 	if result.Request.Headers == nil {
 		result.Request.Headers = map[string]string{}
 	}
-	if options.NoOrigin {
+	if !options.NoOrigin {
 		if _, found := result.Request.Headers["Origin"]; !found {
 			result.Request.Headers["Origin"] = fmt.Sprintf("%s://%s", parsedURL.Scheme, parsedURL.Host)
 		}
@@ -345,12 +345,14 @@ func processResult(options *types.Options, result *output.Result) error {
 		allSpecs[filename].Paths.Set(parsedURL.Path, pathItem)
 	}
 
+	// Merge Extensions
+	pathItem.Extensions = arrays.MergeExtensions(extensions, pathItem.Extensions)
+
 	// Add operation
 	pathItemSafeAddOperation(pathItem, result.Request.Method, &openapi3.Operation{
 		Parameters:  requestParameters,
 		RequestBody: responseBody,
 		Responses:   responses,
-		Extensions:  extensions,
 	})
 
 	return nil
