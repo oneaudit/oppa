@@ -45,6 +45,38 @@ OUTPUT:
 
 ## Running Oppa 🧪
 
+Oppa implements a strange and unconventional merge logic. Oppa lacks knowledge on the parameters in each request. To avoid losing information, Oppa creates one openapi entry for each unique URL.
+
+* `https://example.com/?page=index`
+* `https://example.com/?page=home`
+
+This results in a strange OpenAPI file. This unconventional approach make it easier to test multiple query parameter combinations with [nuclei](https://github.com/projectdiscovery/nuclei) without editing the tool.
+
+```yaml
+  /:
+    get:
+      parameters:
+        - in: query
+          name: page
+          schema:
+            default: index
+            type: string
+      responses:
+        default:
+          description: ""
+  //:
+    get:
+      parameters:
+        - in: query
+          name: page
+          schema:
+            default: home
+            type: string
+      responses:
+        default:
+          description: ""
+```
+
 ### JSON Lines Input
 
 Oppa can work from [Katana](https://github.com/projectdiscovery/katana) JSON Lines output file format. By default, generated files are stored in the `oppa_openapi` folder.

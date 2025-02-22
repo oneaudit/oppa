@@ -339,55 +339,102 @@ func processResult(options *types.Options, result *output.Result) error {
 	if allSpecs[filename].Paths == nil {
 		allSpecs[filename].Paths = openapi3.NewPaths()
 	}
-	pathItem := allSpecs[filename].Paths.Value(parsedURL.Path)
-	if pathItem == nil {
-		pathItem = &openapi3.PathItem{}
-		allSpecs[filename].Paths.Set(parsedURL.Path, pathItem)
-	}
 
-	// Merge Extensions
-	pathItem.Extensions = arrays.MergeExtensions(extensions, pathItem.Extensions)
-
-	// Add operation
-	pathItemSafeAddOperation(pathItem, result.Request.Method, &openapi3.Operation{
+	src := &openapi3.Operation{
 		Parameters:  requestParameters,
 		RequestBody: responseBody,
 		Responses:   responses,
-	})
+	}
+
+	handleMergeLogic(options, allSpecs[filename].Paths, result.Request.Method, parsedURL.Path, src)
 
 	return nil
 }
 
-func operatingSafeAdd(operation **openapi3.Operation, src *openapi3.Operation) {
-	if *operation == nil {
-		src.Responses = arrays.MergeResponses(src.Responses, src.Responses)
-		*operation = src
-	} else {
-		dest := *operation
-		dest.Responses = arrays.MergeResponses(src.Responses, dest.Responses)
-		dest.Parameters = arrays.MergeParameters(src.Parameters, dest.Parameters)
+func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method string, path string, src *openapi3.Operation) bool {
+	pathItem := paths.Value(path)
+	if pathItem == nil {
+		pathItem = &openapi3.PathItem{}
+		paths.Set(path, pathItem)
+
+		// There is no problem as there is no operation
+		addOperationToItem(src, extractOperation(pathItem, method))
+		return true
 	}
+
+	operation := extractOperation(pathItem, method)
+	if *operation == nil {
+		// We are the first to use this method on this path
+		// Hence, there is no merge logic and again no problem
+		addOperationToItem(src, operation)
+		return true
+	}
+
+	// The default logic would be to create a new entry for each path
+	// Like imagine, we got "/?p=1" and "/?p=2", this would result in
+	// - "/" for "/?p=1"
+	// - "//" for "/?p=2"
+	// Ensuring that we kept as much information as possible
+	//
+	// But, this may result as many duplicate routes for some websites
+	// So, we are adding a deduplicate logic, to exclude some
+	dest := *operation
+	duplicate := true
+	for _, srcParameter := range src.Parameters {
+		srcKeyRaw, _ := json.Marshal(srcParameter.Value)
+		srcKey := string(srcKeyRaw)
+		foundKey := false
+
+		for _, destParameter := range dest.Parameters {
+			destKeyRaw, _ := json.Marshal(destParameter.Value)
+			destKey := string(destKeyRaw)
+
+			if destKey == srcKey {
+				foundKey = true
+				break
+			}
+		}
+
+		if !foundKey {
+			duplicate = false
+		}
+	}
+
+	// If there is no new attribute
+	if duplicate && len(dest.Parameters) == len(src.Parameters) {
+		return false
+	}
+
+	return handleMergeLogic(options, paths, method, "/"+path, src)
 }
-func pathItemSafeAddOperation(pathItem *openapi3.PathItem, method string, operation *openapi3.Operation) {
+
+func addOperationToItem(src *openapi3.Operation, dest **openapi3.Operation) {
+	// Remove the default response (if there is one other status code)
+	src.Responses = arrays.MergeResponses(src.Responses, src.Responses)
+	// No merge logic, dest is assumed to be empty
+	*dest = src
+}
+
+func extractOperation(pathItem *openapi3.PathItem, method string) **openapi3.Operation {
 	switch method {
 	case http.MethodConnect:
-		operatingSafeAdd(&pathItem.Connect, operation)
+		return &pathItem.Connect
 	case http.MethodDelete:
-		operatingSafeAdd(&pathItem.Delete, operation)
+		return &pathItem.Delete
 	case http.MethodGet:
-		operatingSafeAdd(&pathItem.Get, operation)
+		return &pathItem.Get
 	case http.MethodHead:
-		operatingSafeAdd(&pathItem.Head, operation)
+		return &pathItem.Head
 	case http.MethodOptions:
-		operatingSafeAdd(&pathItem.Options, operation)
+		return &pathItem.Options
 	case http.MethodPatch:
-		operatingSafeAdd(&pathItem.Patch, operation)
+		return &pathItem.Patch
 	case http.MethodPost:
-		operatingSafeAdd(&pathItem.Post, operation)
+		return &pathItem.Post
 	case http.MethodPut:
-		operatingSafeAdd(&pathItem.Put, operation)
+		return &pathItem.Put
 	case http.MethodTrace:
-		operatingSafeAdd(&pathItem.Trace, operation)
+		return &pathItem.Trace
 	default:
 		panic(fmt.Errorf("unsupported HTTP method %q", method))
 	}
