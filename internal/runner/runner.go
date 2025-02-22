@@ -346,12 +346,12 @@ func processResult(options *types.Options, result *output.Result) error {
 		Responses:   responses,
 	}
 
-	handleMergeLogic(options, allSpecs[filename].Paths, result.Request.Method, parsedURL.Path, src)
+	handleMergeLogic(options, allSpecs[filename].Paths, result.Request.Method, parsedURL.Path, extensions, src)
 
 	return nil
 }
 
-func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method string, path string, src *openapi3.Operation) bool {
+func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method string, path string, extensions map[string]any, src *openapi3.Operation) bool {
 	pathItem := paths.Value(path)
 	if pathItem == nil {
 		pathItem = &openapi3.PathItem{}
@@ -359,6 +359,7 @@ func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method stri
 
 		// There is no problem as there is no operation
 		addOperationToItem(src, extractOperation(pathItem, method))
+		mergeExtensions(pathItem, extensions)
 		return true
 	}
 
@@ -367,6 +368,7 @@ func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method stri
 		// We are the first to use this method on this path
 		// Hence, there is no merge logic and again no problem
 		addOperationToItem(src, operation)
+		mergeExtensions(pathItem, extensions)
 		return true
 	}
 
@@ -405,7 +407,11 @@ func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method stri
 		return false
 	}
 
-	return handleMergeLogic(options, paths, method, "/"+path, src)
+	return handleMergeLogic(options, paths, method, "/"+path, nil, src)
+}
+
+func mergeExtensions(pathItem *openapi3.PathItem, extensions map[string]any) {
+	pathItem.Extensions = arrays.MergeExtensions(extensions, pathItem.Extensions)
 }
 
 func addOperationToItem(src *openapi3.Operation, dest **openapi3.Operation) {
