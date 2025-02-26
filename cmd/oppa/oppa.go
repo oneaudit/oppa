@@ -43,6 +43,7 @@ func readFlags() (*goflags.FlagSet, error) {
 
 	flagSet.CreateGroup("tuning", "Tuning",
 		flagSet.BoolVarP(&options.NoOrigin, "no-origin", "no", false, "By default, oppa adds an Origin header to all paths."),
+		flagSet.BoolVarP(&options.Keep404, "keep-404", "kn", false, "By default, oppa skips file endpoint with a 404 code."),
 	)
 
 	flagSet.CreateGroup("output", "Output",

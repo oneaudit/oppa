@@ -159,7 +159,18 @@ func Execute(options *types.Options) error {
 
 func processResult(options *types.Options, result *output.Result) error {
 	URL := result.Request.URL
-	gologger.Info().Msgf("Processing URL: %s", URL)
+	StatusCode := result.Response.StatusCode
+
+	// We are only skipping 404 files for GET requests
+	// (and this noise reducing option can be disabled)
+	if !options.Keep404 && StatusCode == 404 && result.Request.Method == "GET" {
+		cleanedURL := strings.Split(URL, "?")[0]
+		if !strings.HasSuffix(cleanedURL, "/") {
+			return nil
+		}
+	}
+
+	gologger.Info().Msgf("Processing URL [%d]: %s", StatusCode, URL)
 
 	parsedURL, err := urlutil.Parse(URL)
 	if err != nil {
@@ -198,9 +209,10 @@ func processResult(options *types.Options, result *output.Result) error {
 	if result.Request.Headers == nil {
 		result.Request.Headers = map[string]string{}
 	}
+	origin := fmt.Sprintf("%s://%s", parsedURL.Scheme, parsedURL.Host)
 	if !options.NoOrigin {
 		if _, found := result.Request.Headers["Origin"]; !found {
-			result.Request.Headers["Origin"] = fmt.Sprintf("%s://%s", parsedURL.Scheme, parsedURL.Host)
+			result.Request.Headers["Origin"] = origin
 		}
 	}
 
@@ -296,9 +308,9 @@ func processResult(options *types.Options, result *output.Result) error {
 	responses := openapi3.NewResponses()
 	extensions := make(map[string]any)
 	if result.Response != nil {
-		if result.Response.StatusCode != 0 {
+		if StatusCode != 0 {
 			responses.Set(
-				strconv.Itoa(result.Response.StatusCode),
+				strconv.Itoa(StatusCode),
 				&openapi3.ResponseRef{Value: openapi3.NewResponse().WithDescription("No description")},
 			)
 		}
@@ -346,12 +358,12 @@ func processResult(options *types.Options, result *output.Result) error {
 		Responses:   responses,
 	}
 
-	handleMergeLogic(options, allSpecs[filename].Paths, result.Request.Method, parsedURL.Path, extensions, src)
+	handleMergeLogic(options, allSpecs[filename].Paths, result.Request.Method, parsedURL.Path, extensions, origin, src)
 
 	return nil
 }
 
-func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method string, path string, extensions map[string]any, src *openapi3.Operation) bool {
+func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method string, path string, extensions map[string]any, origin string, src *openapi3.Operation) bool {
 	pathItem := paths.Value(path)
 	if pathItem == nil {
 		pathItem = &openapi3.PathItem{}
@@ -372,6 +384,28 @@ func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method stri
 		return true
 	}
 
+	var uselessParameters = []string{
+		// Apache
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"D;O=A\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"S;O=A\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"M;O=A\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"N;O=D\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"D;O=A\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"S;O=A\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"M;O=A\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"N;O=D\",\"type\":\"string\"}}",
+		// Jetty
+		"{\"in\":\"query\",\"name\":\"O\",\"required\":true,\"schema\":{\"default\":\"A\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"M\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"N\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"S\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"O\",\"required\":false,\"schema\":{\"default\":\"A\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"M\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"N\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"S\",\"type\":\"string\"}}",
+		"{\"in\":\"header\",\"name\":\"Origin\",\"schema\":{\"default\":\"" + origin + "\",\"type\":\"string\"}}",
+	}
+
 	// The default logic would be to create a new entry for each path
 	// Like imagine, we got "/?p=1" and "/?p=2", this would result in
 	// - "/" for "/?p=1"
@@ -382,9 +416,11 @@ func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method stri
 	// So, we are adding a deduplicate logic, to exclude some
 	dest := *operation
 	duplicate := true
+	skipped := 0
 	for _, srcParameter := range src.Parameters {
 		srcKeyRaw, _ := json.Marshal(srcParameter.Value)
 		srcKey := string(srcKeyRaw)
+		println(srcKey)
 		foundKey := false
 
 		for _, destParameter := range dest.Parameters {
@@ -397,17 +433,26 @@ func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method stri
 			}
 		}
 
+		for _, uselessParameter := range uselessParameters {
+			if uselessParameter == srcKey {
+				if !foundKey {
+					skipped++
+				}
+				foundKey = true
+			}
+		}
+
 		if !foundKey {
 			duplicate = false
 		}
 	}
 
 	// If there is no new attribute
-	if duplicate && len(dest.Parameters) == len(src.Parameters) {
+	if duplicate && (len(dest.Parameters)+skipped) == len(src.Parameters) {
 		return false
 	}
 
-	return handleMergeLogic(options, paths, method, "/"+path, nil, src)
+	return handleMergeLogic(options, paths, method, "/"+path, nil, "", src)
 }
 
 func mergeExtensions(pathItem *openapi3.PathItem, extensions map[string]any) {

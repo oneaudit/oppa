@@ -15,6 +15,8 @@ type Options struct {
 	NoOrigin bool
 	// StoreOpenAPIDir specifies custom directory to store openapi specifications
 	StoreOpenAPIDir string
+	// Keep404 keep response codes equals to 404 for files
+	Keep404 bool
 	// Silent shows only output
 	Silent bool
 	// Verbose specifies showing verbose output
