@@ -178,7 +178,10 @@ func processResult(options *types.Options, result *output.Result) error {
 	// matching endpoints are ignored
 	for _, regex := range options.FilterEndpointsRegex {
 		if regex.MatchString(parsedURL.Path) {
-			return nil
+			// .ico endpoints are always welcomed (sorry not sorry)
+			if !strings.HasSuffix(parsedURL.Path, ".ico") {
+				return nil
+			}
 		}
 	}
 
