@@ -234,25 +234,25 @@ func processResult(options *types.Options, result *output.Result) error {
 			)})
 	}
 
-	var responseBody *openapi3.RequestBodyRef
-	hasResponseBody := false
+	var requestBody *openapi3.RequestBodyRef
+	hasRequestBody := false
 
 	// Correct method to fix some edge cases
 	result.Request.Method = strings.ReplaceAll(strings.ReplaceAll(result.Request.Method, "\\", ""), "\"", "")
 
 	switch result.Request.Method {
 	case http.MethodDelete:
-		hasResponseBody = true
+		hasRequestBody = true
 	case http.MethodPatch:
-		hasResponseBody = true
+		hasRequestBody = true
 	case http.MethodPost:
-		hasResponseBody = true
+		hasRequestBody = true
 	case http.MethodPut:
-		hasResponseBody = true
+		hasRequestBody = true
 	case http.MethodTrace:
-		hasResponseBody = true
+		hasRequestBody = true
 	}
-	if hasResponseBody {
+	if hasRequestBody {
 		contentType := result.Request.Headers["Content-Type"]
 		schema := openapi3.NewObjectSchema()
 		switch {
@@ -299,7 +299,7 @@ func processResult(options *types.Options, result *output.Result) error {
 		}
 
 		if schema.Properties != nil {
-			responseBody = &openapi3.RequestBodyRef{Value: openapi3.NewRequestBody().WithContent(
+			requestBody = &openapi3.RequestBodyRef{Value: openapi3.NewRequestBody().WithContent(
 				openapi3.NewContentWithSchema(schema, []string{contentType}),
 			)}
 		}
@@ -354,7 +354,7 @@ func processResult(options *types.Options, result *output.Result) error {
 
 	src := &openapi3.Operation{
 		Parameters:  requestParameters,
-		RequestBody: responseBody,
+		RequestBody: requestBody,
 		Responses:   responses,
 	}
 
