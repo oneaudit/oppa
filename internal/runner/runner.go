@@ -387,12 +387,20 @@ func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method stri
 	var uselessParameters = []string{
 		// Apache
 		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"D;O=A\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"D;O=D\",\"type\":\"string\"}}",
 		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"S;O=A\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"S;O=D\",\"type\":\"string\"}}",
 		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"M;O=A\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"M;O=D\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"N;O=A\",\"type\":\"string\"}}",
 		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"N;O=D\",\"type\":\"string\"}}",
 		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"D;O=A\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"D;O=D\",\"type\":\"string\"}}",
 		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"S;O=A\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"S;O=D\",\"type\":\"string\"}}",
 		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"M;O=A\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"M;O=D\",\"type\":\"string\"}}",
+		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"N;O=A\",\"type\":\"string\"}}",
 		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"N;O=D\",\"type\":\"string\"}}",
 		// Jetty
 		"{\"in\":\"query\",\"name\":\"O\",\"required\":true,\"schema\":{\"default\":\"A\",\"type\":\"string\"}}",
@@ -420,7 +428,6 @@ func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method stri
 	for _, srcParameter := range src.Parameters {
 		srcKeyRaw, _ := json.Marshal(srcParameter.Value)
 		srcKey := string(srcKeyRaw)
-		println(srcKey)
 		foundKey := false
 
 		for _, destParameter := range dest.Parameters {

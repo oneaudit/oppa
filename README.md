@@ -30,17 +30,21 @@ Usage:
 Flags:
 TARGET:
    -t, -target string       target input file to parse
-   -im, -input-mode string  mode of input file ([jsonl]) (default "jsonl")
+   -im, -input-mode string  mode of input file (jsonl, logger++) (default "jsonl")
 
 CONFIGURATION:
    -config string  path to the oppa configuration file
 
+TUNING:
+   -no-origin, -n  By default, oppa adds an Origin header to all paths.
+   -keep-404, -k4  By default, oppa skips file endpoint with a 404 code.
+
 OUTPUT:
-   -d, -output-dir string            store openapi to custom directory
-   -silent                           display output only
-   -v, -verbose                      display verbose output
-   -debug                            display debug output
-   -version                          display project version
+   -d, -output-dir string  store openapi to custom directory
+   -silent                 display output only
+   -v, -verbose            display verbose output
+   -debug                  display debug output
+   -version                display project version
 ```
 
 ## Running Oppa 🧪
