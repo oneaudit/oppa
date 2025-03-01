@@ -1,9 +1,11 @@
 package types
 
 import (
+	"github.com/projectdiscovery/goflags"
 	"github.com/projectdiscovery/gologger"
 	"github.com/projectdiscovery/gologger/levels"
 	logutil "github.com/projectdiscovery/utils/log"
+	"regexp"
 )
 
 type Options struct {
@@ -13,10 +15,16 @@ type Options struct {
 	InputFileMode string
 	// NoOrigin defines if we are adding Origin: to all requests
 	NoOrigin bool
-	// StoreOpenAPIDir specifies custom directory to store openapi specifications
-	StoreOpenAPIDir string
+	// OutputDirectory specifies custom directory to store openapi specifications
+	OutputDirectory string
 	// Keep404 keep response codes equals to 404 for files
 	Keep404 bool
+	// FilterEndpoints filter endpoints using regexes
+	FilterEndpoints goflags.StringSlice
+	// FilterEndpointsBase filter endpoints using regexes (intended usage for generic configuration files)
+	FilterEndpointsBase goflags.StringSlice
+	// FilterEndpointsRegex filter endpoints using regexes
+	FilterEndpointsRegex []*regexp.Regexp
 	// Silent shows only output
 	Silent bool
 	// Verbose specifies showing verbose output

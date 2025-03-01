@@ -40,8 +40,8 @@ func Execute(options *types.Options) error {
 	}
 
 	var storeOpenAPIDir = DefaultOpenAPIDir
-	if options.StoreOpenAPIDir != DefaultOpenAPIDir && options.StoreOpenAPIDir != "" {
-		storeOpenAPIDir = options.StoreOpenAPIDir
+	if options.OutputDirectory != DefaultOpenAPIDir && options.OutputDirectory != "" {
+		storeOpenAPIDir = options.OutputDirectory
 	}
 	_ = os.MkdirAll(storeOpenAPIDir, os.ModePerm)
 
@@ -170,12 +170,20 @@ func processResult(options *types.Options, result *output.Result) error {
 		}
 	}
 
-	gologger.Info().Msgf("Processing URL [%d]: %s", StatusCode, URL)
-
 	parsedURL, err := urlutil.Parse(URL)
 	if err != nil {
 		return err
 	}
+
+	// matching endpoints are ignored
+	for _, regex := range options.FilterEndpointsRegex {
+		if regex.MatchString(parsedURL.Path) {
+			return nil
+		}
+	}
+
+	gologger.Info().Msgf("Processing URL [%d]: %s", StatusCode, URL)
+
 	domain := parsedURL.Host
 	filename := cleanDomainName(domain) + ".yaml"
 

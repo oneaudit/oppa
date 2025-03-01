@@ -44,10 +44,12 @@ func readFlags() (*goflags.FlagSet, error) {
 	flagSet.CreateGroup("tuning", "Tuning",
 		flagSet.BoolVarP(&options.NoOrigin, "n", "no-origin", false, "By default, oppa adds an Origin header to all paths."),
 		flagSet.BoolVarP(&options.Keep404, "k4", "keep-404", false, "By default, oppa skips file endpoint with a 404 code."),
+		flagSet.StringSliceVarP(&options.FilterEndpoints, "fr", "filter-regex", goflags.StringSlice{}, "Skip endpoints based on a regex.", goflags.Options{}),
+		flagSet.StringSliceVarP(&options.FilterEndpointsBase, "frb", "filter-regex-base", goflags.StringSlice{}, "Skip endpoints based on a regex.", goflags.Options{}),
 	)
 
 	flagSet.CreateGroup("output", "Output",
-		flagSet.StringVarP(&options.StoreOpenAPIDir, "output-dir", "d", "", "store openapi to custom directory"),
+		flagSet.StringVarP(&options.OutputDirectory, "output-dir", "d", "", "store openapi to custom directory"),
 		flagSet.BoolVar(&options.Silent, "silent", false, "display output only"),
 		flagSet.BoolVarP(&options.Verbose, "verbose", "v", false, "display verbose output"),
 		flagSet.BoolVar(&options.Debug, "debug", false, "display debug output"),

@@ -1,0 +1,6 @@
+output-dir: .output/
+filter-regex-base:
+  - /phpmyadmin/
+  - /phpsysinfo/
+  - /adminer/
+  - /wp-include/

@@ -36,8 +36,10 @@ CONFIGURATION:
    -config string  path to the oppa configuration file
 
 TUNING:
-   -no-origin, -n  By default, oppa adds an Origin header to all paths.
-   -keep-404, -k4  By default, oppa skips file endpoint with a 404 code.
+   -no-origin, -n                     By default, oppa adds an Origin header to all paths.
+   -keep-404, -k4                     By default, oppa skips file endpoint with a 404 code.
+   -filter-regex, -fr string[]        Skip endpoints based on a regex.
+   -filter-regex-base, -frb string[]  Skip endpoints based on a regex.
 
 OUTPUT:
    -d, -output-dir string  store openapi to custom directory
@@ -88,4 +90,12 @@ Oppa can work from [Katana](https://github.com/projectdiscovery/katana) JSON Lin
 ```
 $ katana -u https://example.com -jsonl -o requests.txt
 $ oppa -im jsonl -t requests.txt
+```
+
+## Examples
+
+On a GLPI project with directory listing, we can use:
+
+```command
+oppa -config config.yaml -target katana.txt -fr "^/icons/" -fr "^/src/" -fr "^/pics/" -fr "^/templates/" -fr "^/css_compiled/"
 ```
