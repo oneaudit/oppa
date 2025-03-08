@@ -35,6 +35,7 @@ func readFlags() (*goflags.FlagSet, error) {
 	flagSet.CreateGroup("input", "Target",
 		flagSet.StringVarP(&options.InputFile, "target", "t", "", "target input file to parse"),
 		flagSet.StringVarP(&options.InputFileMode, "input-mode", "im", "jsonl", fmt.Sprintf("mode of input file (%v)", []string{"jsonl", "logger++"})),
+		flagSet.StringSliceVarP(&options.ServerRoots, "server-root", "sr", goflags.StringSlice{}, "Manually define server roots.", goflags.Options{}),
 	)
 
 	flagSet.CreateGroup("config", "Configuration",

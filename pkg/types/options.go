@@ -19,6 +19,8 @@ type Options struct {
 	OutputDirectory string
 	// Keep404 keep response codes equals to 404 for files
 	Keep404 bool
+	// ServerRoots server roots mapping
+	ServerRoots goflags.StringSlice
 	// FilterEndpoints filter endpoints using regexes
 	FilterEndpoints goflags.StringSlice
 	// FilterEndpointsBase filter endpoints using regexes (intended usage for generic configuration files)

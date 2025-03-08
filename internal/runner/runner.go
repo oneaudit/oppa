@@ -188,6 +188,16 @@ func processResult(options *types.Options, result *output.Result) error {
 	gologger.Info().Msgf("Processing URL [%d]: %s", StatusCode, URL)
 
 	domain := parsedURL.Host
+
+	// Multiple websites can be hosted on one domain
+	for _, root := range options.ServerRoots {
+		if strings.HasPrefix(parsedURL.Path, root) {
+			extraRoot := strings.TrimSuffix(root, "/")
+			domain += extraRoot
+			parsedURL.Path = strings.Replace(parsedURL.Path, extraRoot, "", 1)
+		}
+	}
+
 	filename := cleanDomainName(domain) + ".yaml"
 
 	if _, exists := allSpecs[filename]; !exists {
@@ -518,6 +528,8 @@ func cleanDomainName(domain string) string {
 		case '.':
 			builder.WriteRune('_')
 		case ':':
+			builder.WriteRune('_')
+		case '?':
 			builder.WriteRune('_')
 		case '/':
 			builder.WriteRune('_')
