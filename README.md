@@ -7,7 +7,7 @@
 
 ## Installation ✍️
 
-oppa requires **Go 1.22+** to install successfully.
+oppa requires **Go 1.23.0+** to install successfully.
 
 ```console
 CGO_ENABLED=1 go install github.com/oneaudit/oppa/cmd/oppa@latest

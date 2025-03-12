@@ -97,7 +97,7 @@ func Execute(options *types.Options) error {
 
 			requestMethod := row[3]
 			requestURL := row[7]
-			responseStatusCode, _ := strconv.Atoi(row[12])
+			responseStatusCode, _ := strconv.Atoi(row[13])
 
 			var result output.Result
 			result.Request = &navigation.Request{

@@ -12,6 +12,7 @@ var httpUninterestingHeaders = []string{
 	"sec-fetch-user", "sec-fetch-mode", "sec-fetch-dest", "priority", "referer", "name", "dnt", "cookie",
 	"upgrade-insecure-requests", "content-length", "sec-ch-ua-platform", "sec-ch-ua", "sec-ch-ua-mobile",
 	"cache-control", "x-requested-with", "if-modified-since", "if-none-match", "authorization", "pragma",
+	"sec-fetch-storage-access", "sec-websocket-version", "sec-websocket-protocol", "sec-websocket-key",
 }
 
 func IsUninterestingHeader(header string) bool {
