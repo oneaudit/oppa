@@ -378,7 +378,7 @@ func processResult(options *types.Options, result *output.Result) error {
 				var scriptSrcendpoints []string
 				reader.Find("script[src]").Each(func(i int, item *goquery.Selection) {
 					src, ok := item.Attr("src")
-					if ok && src != "" && strings.HasPrefix(src, "http") {
+					if ok && src != "" && strings.HasPrefix(src, "http") && !strings.HasPrefix(src, origin) {
 						scriptSrcendpoints = append(scriptSrcendpoints, src)
 					}
 				})
