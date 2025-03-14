@@ -75,12 +75,14 @@ func Execute(options *types.Options) error {
 			var result output.Result
 			err = json.Unmarshal([]byte(line), &result)
 			if err != nil {
-				return errorutil.NewWithErr(err).Msgf("could not unmarshal input file: %s", options.InputFile)
+				gologger.Warning().Msgf("could not unmarshal input file: %s", options.InputFile)
+				continue
 			}
 
 			err = processResult(options, &result)
 			if err != nil {
-				return errorutil.NewWithErr(err).Msgf("could not process result: %s", result.Request.URL)
+				gologger.Warning().Msgf("could not process result: %s", result.Request.URL)
+				continue
 			}
 		}
 	} else if options.InputFileMode == "logger++" {
@@ -127,9 +129,20 @@ func Execute(options *types.Options) error {
 			}
 			result.Response.Raw = string(decodedBytes)
 
+			// If we have to, we parse the response and extract the status code
+			if result.Response.StatusCode == 0 {
+				parsedRawHttp, err = urlhelper.ParseRawHTTP(result.Response.Raw, false)
+				if err != nil {
+					gologger.Warning().Msgf("could not parse response: %s", result.Response.Raw)
+					continue
+				}
+				result.Response.StatusCode = parsedRawHttp.StatusCode
+			}
+
 			err = processResult(options, &result)
 			if err != nil {
-				return errorutil.NewWithErr(err).Msgf("could not process result: %s", result.Request.URL)
+				gologger.Warning().Msgf("could not process result: %s (%v)", result.Request.URL, err.Error())
+				continue
 			}
 		}
 	} else {
@@ -159,13 +172,22 @@ func Execute(options *types.Options) error {
 
 func processResult(options *types.Options, result *output.Result) error {
 	URL := result.Request.URL
-	StatusCode := result.Response.StatusCode
+	var StatusCode int
+	if result.Response != nil {
+		StatusCode = result.Response.StatusCode
+	} else {
+		// if there is no response
+		// by design, we ignore these
+		gologger.Debug().Msgf("[SKIPPED] No response code for %s", URL)
+		return nil
+	}
 
 	// We are only skipping 404 files for GET requests
 	// (and this noise reducing option can be disabled)
 	if !options.Keep404 && StatusCode == 404 && result.Request.Method == "GET" {
 		cleanedURL := strings.Split(URL, "?")[0]
 		if !strings.HasSuffix(cleanedURL, "/") {
+			gologger.Debug().Msgf("[FILTERED] Filtered 404 URL: %s", URL)
 			return nil
 		}
 	}
@@ -180,6 +202,7 @@ func processResult(options *types.Options, result *output.Result) error {
 		if regex.MatchString(parsedURL.Path) {
 			// .ico endpoints are always welcomed (sorry not sorry)
 			if !strings.HasSuffix(parsedURL.Path, ".ico") {
+				gologger.Debug().Msgf("[FILTERED] Filtered URL by Regex: %s", URL)
 				return nil
 			}
 		}
