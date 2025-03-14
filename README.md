@@ -29,8 +29,9 @@ Usage:
 
 Flags:
 TARGET:
-   -t, -target string       target input file to parse
-   -im, -input-mode string  mode of input file (jsonl, logger++) (default "jsonl")
+   -t, -target string          target input file to parse
+   -im, -input-mode string     mode of input file (jsonl, logger++) (default "jsonl")
+   -sr, -server-root string[]  Manually define server roots.
 
 CONFIGURATION:
    -config string  path to the oppa configuration file

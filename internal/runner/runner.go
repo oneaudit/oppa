@@ -428,36 +428,6 @@ func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method stri
 		return true
 	}
 
-	var uselessParameters = []string{
-		// Apache
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"D;O=A\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"D;O=D\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"S;O=A\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"S;O=D\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"M;O=A\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"M;O=D\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"N;O=A\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"N;O=D\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"D;O=A\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"D;O=D\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"S;O=A\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"S;O=D\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"M;O=A\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"M;O=D\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"N;O=A\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"N;O=D\",\"type\":\"string\"}}",
-		// Jetty
-		"{\"in\":\"query\",\"name\":\"O\",\"required\":true,\"schema\":{\"default\":\"A\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"M\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"N\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":true,\"schema\":{\"default\":\"S\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"O\",\"required\":false,\"schema\":{\"default\":\"A\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"M\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"N\",\"type\":\"string\"}}",
-		"{\"in\":\"query\",\"name\":\"C\",\"required\":false,\"schema\":{\"default\":\"S\",\"type\":\"string\"}}",
-		"{\"in\":\"header\",\"name\":\"Origin\",\"schema\":{\"default\":\"" + origin + "\",\"type\":\"string\"}}",
-	}
-
 	// The default logic would be to create a new entry for each path
 	// Like imagine, we got "/?p=1" and "/?p=2", this would result in
 	// - "/" for "/?p=1"
@@ -484,11 +454,37 @@ func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method stri
 			}
 		}
 
-		for _, uselessParameter := range uselessParameters {
-			if uselessParameter == srcKey {
+		// Apache and Jetty Directory Listing
+		if srcParameter.Value.Name == "C" || srcParameter.Value.Name == "O" {
+			strValue, ok := srcParameter.Value.Schema.Value.Default.(string)
+			if ok {
+				for _, uselessParameter := range []string{"D;O=A", "D;O=D", "S;O=A", "S;O=D", "M;O=A", "M;O=D", "N;O=A", "N;O=D", "A", "M", "N", "S"} {
+					if uselessParameter == strValue {
+						if !foundKey {
+							skipped++
+						}
+						foundKey = true
+						break
+					}
+				}
+			}
+		} else
+		// Origin Header
+		if srcParameter.Value.Name == "Origin" {
+			strValue, ok := srcParameter.Value.Schema.Value.Default.(string)
+			if ok && strValue == origin {
 				if !foundKey {
 					skipped++
 				}
+				foundKey = true
+			}
+		} else
+		// This parameter seems to be a timestamp, we don't generate a new entry per timestamp
+		if srcParameter.Value.Name == "timestamp" {
+			strValue, ok := srcParameter.Value.Schema.Value.Default.(string)
+			if ok && len(strValue) == 10 {
+				// we don't increase skipped
+				// as we want at least one value
 				foundKey = true
 			}
 		}
