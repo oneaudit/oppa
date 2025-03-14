@@ -8,19 +8,36 @@ import (
 
 // We are allowing "origin" while we hope the value is appropriate (not a fuzzed one)
 var httpUninterestingHeaders = []string{
-	"accept-encoding", "accept", "user-agent", "accept-language", "connection", "sec-gpc", "sec-fetch-site",
-	"sec-fetch-user", "sec-fetch-mode", "sec-fetch-dest", "priority", "referer", "name", "dnt", "cookie",
-	"upgrade-insecure-requests", "content-length", "sec-ch-ua-platform", "sec-ch-ua", "sec-ch-ua-mobile",
-	"cache-control", "x-requested-with", "if-modified-since", "if-none-match", "authorization", "pragma",
-	"sec-fetch-storage-access", "sec-websocket-version", "sec-websocket-protocol", "sec-websocket-key",
+	// Known request headers
+	// Excluded: "content-type", "origin",
+	"a-im", "accept", "accept-charset", "accept-datetime", "accept-encoding", "accept-language", "access-control-request-method",
+	"cache-control", "connection", "content-encoding", "content-length", "content-md5", "date", "expect",
+	"forwarded", "from", "host", "http2-settings", "if-match", "if-modified-since", "if-none-match", "if-range", "if-unmodified-since",
+	"max-forwards", "pragma", "prefer", "range", "referer", "te", "trailer", "transfer-encoding", "user-agent", "upgrade",
+	"via", "warning", "upgrade-insecure-requests", "x-requested-with", "dnt", "x-forwarded-for", "x-forwarded-host", "x-forwarded-proto",
+	"front-end-https", "x-att-deviceid", "x-wap-profile", "proxy-connection", "x-uidh", "x-csrf-token", "x-request-id", "x-correlation-id",
+	"save-data", "priority",
+	// CORS
+	"access-control-request-method", "access-control-request-headers",
+	// Browser Headers
+	"sec-gpc", "sec-websocket-version", "sec-websocket-protocol", "sec-websocket-key", "sec-fetch-site", "sec-fetch-user",
+	"sec-fetch-mode", "sec-fetch-dest", "sec-fetch-storage-access", "sec-ch-ua-platform", "sec-ch-ua", "sec-ch-ua-mobile",
+	// Interesting
+	"cookie", "authorization", "proxy-authorization", "x-http-method-override",
 }
 
 func IsUninterestingHeader(header string) bool {
+	// quick check
+	if header == "content-type" || header == "origin" {
+		return false
+	}
+
 	for _, h := range httpUninterestingHeaders {
 		if h == header {
 			return true
 		}
 	}
+
 	return false
 }
 
