@@ -35,7 +35,7 @@ func readFlags() (*goflags.FlagSet, error) {
 	flagSet.CreateGroup("input", "Target",
 		flagSet.StringVarP(&options.InputFile, "target", "t", "", "target input file to parse"),
 		flagSet.StringVarP(&options.InputFileMode, "input-mode", "im", "jsonl", fmt.Sprintf("mode of input file (%v)", []string{"jsonl", "logger++"})),
-		flagSet.StringSliceVarP(&options.ServerRoots, "server-root", "sr", goflags.StringSlice{}, "Manually define server roots.", goflags.Options{}),
+		flagSet.StringSliceVarP(&options.ServerRoots, "server-root", "sr", nil, "Manually define server roots.", goflags.StringSliceOptions),
 	)
 
 	flagSet.CreateGroup("config", "Configuration",
@@ -45,8 +45,8 @@ func readFlags() (*goflags.FlagSet, error) {
 	flagSet.CreateGroup("tuning", "Tuning",
 		flagSet.BoolVarP(&options.NoOrigin, "n", "no-origin", false, "By default, oppa adds an Origin header to all paths."),
 		flagSet.BoolVarP(&options.Keep404, "k4", "keep-404", false, "By default, oppa skips file endpoint with a 404 code."),
-		flagSet.StringSliceVarP(&options.FilterEndpoints, "fr", "filter-regex", goflags.StringSlice{}, "Skip endpoints based on a regex.", goflags.Options{}),
-		flagSet.StringSliceVarP(&options.FilterEndpointsBase, "frb", "filter-regex-base", goflags.StringSlice{}, "Skip endpoints based on a regex.", goflags.Options{}),
+		flagSet.StringSliceVarP(&options.FilterEndpoints, "fr", "filter-regex", nil, "Skip endpoints based on a regex.", goflags.StringSliceOptions),
+		flagSet.StringSliceVarP(&options.FilterEndpointsBase, "frb", "filter-regex-base", nil, "Skip endpoints based on a regex.", goflags.StringSliceOptions),
 	)
 
 	flagSet.CreateGroup("output", "Output",
