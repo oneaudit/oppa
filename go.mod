@@ -5,9 +5,9 @@ go 1.23.0
 require (
 	github.com/PuerkitoBio/goquery v1.10.2
 	github.com/getkin/kin-openapi v0.129.0
+	github.com/oneaudit/katana-ng v0.0.0-20250319174204-f1f23a511f58
 	github.com/projectdiscovery/goflags v0.1.74
 	github.com/projectdiscovery/gologger v1.1.47
-	github.com/projectdiscovery/katana v1.1.2
 	github.com/projectdiscovery/utils v0.4.13
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -26,11 +26,11 @@ require (
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
-	github.com/hashicorp/go-version v1.6.0 // indirect
+	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/hdm/jarm-go v0.0.7 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kataras/jwt v0.1.10 // indirect
+	github.com/kataras/jwt v0.1.14 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/logrusorgru/aurora v2.0.3+incompatible // indirect
@@ -50,11 +50,11 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/projectdiscovery/blackrock v0.0.1 // indirect
-	github.com/projectdiscovery/dsl v0.3.13 // indirect
+	github.com/projectdiscovery/dsl v0.3.14 // indirect
 	github.com/projectdiscovery/gostruct v0.0.2 // indirect
 	github.com/projectdiscovery/mapcidr v1.1.34 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
-	github.com/sashabaranov/go-openai v1.15.3 // indirect
+	github.com/sashabaranov/go-openai v1.37.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
