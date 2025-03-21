@@ -6,7 +6,7 @@ import (
 	"github.com/projectdiscovery/goflags"
 )
 
-func MakeFlagSet(options *types.Options, cfgFile string) *goflags.FlagSet {
+func MakeFlagSet(options *types.Options, cfgFile *string) *goflags.FlagSet {
 	flagSet := goflags.NewFlagSet()
 	flagSet.SetDescription(`Oppa is a toolkit to generate OpenAPI specifications from JSON lines.`)
 
@@ -17,7 +17,7 @@ func MakeFlagSet(options *types.Options, cfgFile string) *goflags.FlagSet {
 	)
 
 	flagSet.CreateGroup("config", "Configuration",
-		flagSet.StringVar(&cfgFile, "config", "", "path to the oppa configuration file"),
+		flagSet.StringVar(cfgFile, "config", "", "path to the oppa configuration file"),
 	)
 
 	flagSet.CreateGroup("tuning", "Tuning",

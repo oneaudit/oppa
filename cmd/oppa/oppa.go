@@ -29,7 +29,7 @@ func main() {
 }
 
 func readFlags() (*goflags.FlagSet, error) {
-	flagSet := api.MakeFlagSet(options, cfgFile)
+	flagSet := api.MakeFlagSet(options, &cfgFile)
 
 	if err := flagSet.Parse(); err != nil {
 		return nil, errorutil.NewWithErr(err).Msgf("could not parse flags")
