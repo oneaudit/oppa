@@ -19,7 +19,7 @@ import (
 	"strings"
 )
 
-func ProcessResult(options *types.Options, result *output.Result, allSpecs map[string]*openapi3.T) (map[string]*openapi3.T, error) {
+func ProcessResult(options *types.Options, result *output.Result, allSpecs map[string]*openapi3.T) error {
 	URL := result.Request.URL
 	var StatusCode int
 	if result.Response != nil {
@@ -28,7 +28,7 @@ func ProcessResult(options *types.Options, result *output.Result, allSpecs map[s
 		// if there is no response
 		// by design, we ignore these
 		gologger.Debug().Msgf("[SKIPPED] No response code for %s", URL)
-		return allSpecs, nil
+		return nil
 	}
 
 	// We are only skipping 404 files for GET requests
@@ -37,13 +37,13 @@ func ProcessResult(options *types.Options, result *output.Result, allSpecs map[s
 		cleanedURL := strings.Split(URL, "?")[0]
 		if !strings.HasSuffix(cleanedURL, "/") {
 			gologger.Debug().Msgf("[FILTERED] Filtered 404 URL: %s", URL)
-			return allSpecs, nil
+			return nil
 		}
 	}
 
 	parsedURL, err := urlutil.Parse(URL)
 	if err != nil {
-		return allSpecs, err
+		return err
 	}
 
 	// matching endpoints are ignored
@@ -52,7 +52,7 @@ func ProcessResult(options *types.Options, result *output.Result, allSpecs map[s
 			// .ico endpoints are always welcomed (sorry not sorry)
 			if !strings.HasSuffix(parsedURL.Path, ".ico") {
 				gologger.Debug().Msgf("[FILTERED] Filtered URL by Regex: %s", URL)
-				return allSpecs, nil
+				return nil
 			}
 		}
 	}
@@ -157,7 +157,7 @@ func ProcessResult(options *types.Options, result *output.Result, allSpecs map[s
 			}
 			err = json.Unmarshal([]byte(result.Request.Body), &bodyParams)
 			if err != nil {
-				return allSpecs, err
+				return err
 			}
 			for key, value := range bodyParams {
 				keySchema := openapi3.NewSchema()
@@ -168,7 +168,7 @@ func ProcessResult(options *types.Options, result *output.Result, allSpecs map[s
 		case strings.Contains(contentType, "application/x-www-form-urlencoded"):
 			bodyParams, err := url.ParseQuery(result.Request.Body)
 			if err != nil {
-				return allSpecs, err
+				return err
 			}
 			for key, values := range bodyParams {
 				var value any
@@ -188,7 +188,7 @@ func ProcessResult(options *types.Options, result *output.Result, allSpecs map[s
 				schema = schema.WithProperty(key, keySchema)
 			}
 		default:
-			return allSpecs, errorutil.NewWithErr(err)
+			return errorutil.NewWithErr(err)
 		}
 
 		if schema.Properties != nil {
@@ -211,7 +211,7 @@ func ProcessResult(options *types.Options, result *output.Result, allSpecs map[s
 		if result.Response.Raw != "" {
 			parsedResponse, err := urlhelper.ParseRawHTTP(result.Response.Raw, false)
 			if err != nil {
-				return allSpecs, errorutil.NewWithErr(err)
+				return errorutil.NewWithErr(err)
 			}
 			// set status code
 			responses.Set(
@@ -222,7 +222,7 @@ func ProcessResult(options *types.Options, result *output.Result, allSpecs map[s
 			if parsedResponse.Headers != nil && strings.HasPrefix(parsedResponse.Headers["Content-Type"], "text/html") {
 				reader, err := goquery.NewDocumentFromReader(strings.NewReader(parsedResponse.Body))
 				if err != nil {
-					return allSpecs, errorutil.NewWithErr(err)
+					return errorutil.NewWithErr(err)
 				}
 				var scriptSrcendpoints []string
 				reader.Find("script[src]").Each(func(i int, item *goquery.Selection) {
@@ -253,7 +253,7 @@ func ProcessResult(options *types.Options, result *output.Result, allSpecs map[s
 
 	handleMergeLogic(options, allSpecs[filename].Paths, result.Request.Method, parsedURL.Path, extensions, origin, src)
 
-	return allSpecs, nil
+	return nil
 }
 
 func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method string, path string, extensions map[string]any, origin string, src *openapi3.Operation) bool {

@@ -65,7 +65,7 @@ func Execute(options *types.Options) error {
 				continue
 			}
 
-			allSpecs, err = parser.ProcessResult(options, &result, allSpecs)
+			err = parser.ProcessResult(options, &result, allSpecs)
 			if err != nil {
 				gologger.Warning().Msgf("could not process result: %s", result.Request.URL)
 				continue
@@ -125,7 +125,7 @@ func Execute(options *types.Options) error {
 				result.Response.StatusCode = parsedRawHttp.StatusCode
 			}
 
-			allSpecs, err = parser.ProcessResult(options, &result, allSpecs)
+			err = parser.ProcessResult(options, &result, allSpecs)
 			if err != nil {
 				gologger.Warning().Msgf("could not process result: %s (%v)", result.Request.URL, err.Error())
 				continue
