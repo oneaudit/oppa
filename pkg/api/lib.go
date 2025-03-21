@@ -1,12 +1,31 @@
-package runner
+package api
 
 import (
 	"github.com/oneaudit/oppa/pkg/types"
 	errorutil "github.com/projectdiscovery/utils/errors"
+	"os"
 	"regexp"
 )
 
-func validateOptions(options *types.Options) error {
+const DefaultOpenAPIDir = "oppa_openapi"
+
+func CreateDefaultOptionsFromFile(cfgFile string) (*types.Options, error) {
+	cfgOptions := &types.Options{}
+	flagSet := MakeFlagSet(cfgOptions, cfgFile)
+	if cfgFile != "" {
+		if err := flagSet.MergeConfigFile(cfgFile); err != nil {
+			return nil, errorutil.NewWithErr(err).Msgf("could not read config file")
+		}
+	}
+	return cfgOptions, nil
+}
+
+func ValidateOptions(options *types.Options) error {
+	if options.OutputDirectory == "" {
+		options.OutputDirectory = DefaultOpenAPIDir
+	}
+	_ = os.MkdirAll(options.OutputDirectory, os.ModePerm)
+
 	for _, fr := range options.FilterEndpoints {
 		cr, err := regexp.Compile(fr)
 		if err != nil {

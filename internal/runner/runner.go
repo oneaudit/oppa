@@ -10,6 +10,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/oneaudit/katana-ng/pkg/navigation"
 	"github.com/oneaudit/katana-ng/pkg/output"
+	"github.com/oneaudit/oppa/pkg/api"
 	"github.com/oneaudit/oppa/pkg/openapi"
 	"github.com/oneaudit/oppa/pkg/types"
 	"github.com/oneaudit/oppa/pkg/utils/arrays"
@@ -39,13 +40,7 @@ func Execute(options *types.Options) error {
 		return nil
 	}
 
-	var storeOpenAPIDir = DefaultOpenAPIDir
-	if options.OutputDirectory != DefaultOpenAPIDir && options.OutputDirectory != "" {
-		storeOpenAPIDir = options.OutputDirectory
-	}
-	_ = os.MkdirAll(storeOpenAPIDir, os.ModePerm)
-
-	if err := validateOptions(options); err != nil {
+	if err := api.ValidateOptions(options); err != nil {
 		return errorutil.NewWithErr(err).Msgf("could not validate options")
 	}
 
@@ -54,7 +49,6 @@ func Execute(options *types.Options) error {
 	if err != nil {
 		return errorutil.NewWithErr(err).Msgf("could not open input file: %s", options.InputFile)
 	}
-	//goland:noinspection GoUnhandledErrorResult
 	defer file.Close()
 
 	// Parse File
@@ -150,7 +144,7 @@ func Execute(options *types.Options) error {
 	}
 
 	for filename, spec := range allSpecs {
-		targetFile := path.Join(storeOpenAPIDir, filename)
+		targetFile := path.Join(options.OutputDirectory, filename)
 		gologger.Info().Msgf("Creating OpenAPI specification: %s", targetFile)
 		file, err := os.Create(targetFile)
 		if err != nil {
