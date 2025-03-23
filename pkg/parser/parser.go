@@ -99,26 +99,30 @@ func ProcessResult(options *types.Options, result *output.Result, allSpecs map[s
 	})
 
 	// Handle headers
-	if result.Request.Headers == nil {
-		result.Request.Headers = map[string]string{}
+	requestHeaders := map[string]string{}
+	if result.Request.Headers != nil {
+		for key := range result.Request.Headers {
+			requestHeaders[strings.ToLower(key)] = result.Request.Headers[key]
+		}
 	}
 	origin := fmt.Sprintf("%s://%s", parsedURL.Scheme, parsedURL.Host)
 	if !options.NoOrigin {
-		if _, found := result.Request.Headers["Origin"]; !found {
-			result.Request.Headers["Origin"] = origin
+		if _, found := requestHeaders["origin"]; !found {
+			requestHeaders["origin"] = origin
 		}
 	}
 
+	// Notice that we don't use "requestHeaders" to preserve the original header format
 	for headerName, headerValue := range result.Request.Headers {
 		// not interesting
 		if strings.ToLower(headerName) == "content-type" {
 			continue
 		}
-		required := true
 
-		// not required
-		if strings.ToLower(headerName) == "origin" {
-			required = false
+		// aside from origin, they are all required
+		var required bool
+		if strings.ToLower(headerName) != "origin" {
+			required = true
 		}
 
 		requestParameters = append(requestParameters,
@@ -146,7 +150,7 @@ func ProcessResult(options *types.Options, result *output.Result, allSpecs map[s
 		hasRequestBody = true
 	}
 	if hasRequestBody {
-		contentType := result.Request.Headers["Content-Type"]
+		contentType := requestHeaders["content-type"]
 		schema := openapi3.NewObjectSchema()
 		switch {
 		case strings.Contains(contentType, "application/json"):
@@ -218,21 +222,30 @@ func ProcessResult(options *types.Options, result *output.Result, allSpecs map[s
 				strconv.Itoa(parsedResponse.StatusCode),
 				&openapi3.ResponseRef{Value: openapi3.NewResponse().WithDescription("No description")},
 			)
-			// set extensions
-			if parsedResponse.Headers != nil && strings.HasPrefix(parsedResponse.Headers["Content-Type"], "text/html") {
-				reader, err := goquery.NewDocumentFromReader(strings.NewReader(parsedResponse.Body))
-				if err != nil {
-					return errorutil.NewWithErr(err)
-				}
-				var scriptSrcendpoints []string
-				reader.Find("script[src]").Each(func(i int, item *goquery.Selection) {
-					src, ok := item.Attr("src")
-					if ok && src != "" && strings.HasPrefix(src, "http") && !strings.HasPrefix(src, origin) {
-						scriptSrcendpoints = append(scriptSrcendpoints, src)
-					}
-				})
-				extensions["x-javascript-libs"] = scriptSrcendpoints
+			result.Response.Body = parsedResponse.Body
+			result.Response.Headers = parsedResponse.Headers
+		}
+
+		if result.Response.Headers != nil {
+			if found, ok := result.Response.Headers["Content-Type"]; ok {
+				result.Response.Headers["content-type"] = found
 			}
+		}
+
+		// set extensions
+		if result.Response.Headers != nil && strings.HasPrefix(result.Response.Headers["content-type"], "text/html") {
+			reader, err := goquery.NewDocumentFromReader(strings.NewReader(result.Response.Body))
+			if err != nil {
+				return errorutil.NewWithErr(err)
+			}
+			var scriptSrcendpoints []string
+			reader.Find("script[src]").Each(func(i int, item *goquery.Selection) {
+				src, ok := item.Attr("src")
+				if ok && src != "" && strings.HasPrefix(src, "http") && !strings.HasPrefix(src, origin) {
+					scriptSrcendpoints = append(scriptSrcendpoints, src)
+				}
+			})
+			extensions["x-javascript-libs"] = scriptSrcendpoints
 		}
 	}
 
