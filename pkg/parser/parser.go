@@ -70,7 +70,7 @@ func ProcessResult(options *types.Options, result *output.Result, allSpecs map[s
 		}
 	}
 
-	filename := cleanDomainName(domain) + ".yaml"
+	filename := ComputeFileName(domain)
 
 	if _, exists := allSpecs[filename]; !exists {
 		allSpecs[filename] = openapi.New(domain, parsedURL.Scheme)
@@ -105,9 +105,13 @@ func ProcessResult(options *types.Options, result *output.Result, allSpecs map[s
 			requestHeaders[strings.ToLower(key)] = result.Request.Headers[key]
 		}
 	}
+	if result.Request.Headers == nil {
+		result.Request.Headers = map[string]string{}
+	}
 	origin := fmt.Sprintf("%s://%s", parsedURL.Scheme, parsedURL.Host)
 	if !options.NoOrigin {
 		if _, found := requestHeaders["origin"]; !found {
+			result.Request.Headers["Origin"] = origin
 			requestHeaders["origin"] = origin
 		}
 	}
@@ -267,6 +271,10 @@ func ProcessResult(options *types.Options, result *output.Result, allSpecs map[s
 	handleMergeLogic(options, allSpecs[filename].Paths, result.Request.Method, parsedURL.Path, extensions, origin, src)
 
 	return nil
+}
+
+func ComputeFileName(domain string) string {
+	return cleanDomainName(domain) + ".yaml"
 }
 
 func handleMergeLogic(options *types.Options, paths *openapi3.Paths, method string, path string, extensions map[string]any, origin string, src *openapi3.Operation) bool {
