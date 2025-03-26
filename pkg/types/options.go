@@ -35,6 +35,8 @@ type Options struct {
 	Debug bool
 	// Version enables showing of tool version
 	Version bool
+	// CLI indicate if we are currently using the CLI
+	CLI bool
 }
 
 // ConfigureOutput configures the output logging levels to be displayed on the screen
@@ -49,5 +51,7 @@ func (options *Options) ConfigureOutput() {
 		gologger.DefaultLogger.SetMaxLevel(levels.LevelInfo)
 	}
 
-	logutil.DisableDefaultLogger()
+	if !options.CLI {
+		logutil.DisableDefaultLogger()
+	}
 }

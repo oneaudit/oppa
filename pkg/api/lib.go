@@ -24,7 +24,9 @@ func ValidateOptions(options *types.Options) error {
 	if options.OutputDirectory == "" {
 		options.OutputDirectory = DefaultOpenAPIDir
 	}
-	_ = os.MkdirAll(options.OutputDirectory, os.ModePerm)
+	if !options.CLI {
+		_ = os.MkdirAll(options.OutputDirectory, os.ModePerm)
+	}
 
 	for _, fr := range options.FilterEndpoints {
 		cr, err := regexp.Compile(fr)
